@@ -1,5 +1,6 @@
 import { X, Copy, Check, Trash2, Wand2, Globe, Shield, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { galleryApi } from '../../services/api';
 
@@ -66,7 +67,7 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
         });
     };
 
-    return (
+    const modalContent = (
         <div className="modal-overlay" onClick={onClose}>
             <div className="detail-modal glass animate-fade-in" onClick={e => e.stopPropagation()}>
                 <div className="detail-grid">
@@ -139,4 +140,6 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
             </div>
         </div>
     );
+
+    return createPortal(modalContent, document.getElementById('modal-root'));
 }

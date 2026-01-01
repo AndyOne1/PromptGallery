@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useDropzone } from 'react-dropzone';
 import { X, Upload, Loader2, Wand2, Globe, Shield } from 'lucide-react';
 import { uploadToCloudinary } from '../../services/cloudinary';
@@ -118,7 +119,7 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete, initial
 
     if (!isOpen) return null;
 
-    return (
+    const modalContent = (
         <div className="modal-overlay">
             <div className="modal-content glass animate-fade-in" style={{ maxWidth: '600px' }}>
                 <header className="modal-header">
@@ -191,4 +192,6 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete, initial
             </div>
         </div>
     );
+
+    return createPortal(modalContent, document.getElementById('modal-root'));
 }

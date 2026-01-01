@@ -1,5 +1,6 @@
 import { X, Copy, Check, Trash2, Calendar, Hash, Clock, Image as ImageIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { galleryApi } from '../../services/api';
 
 export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) {
@@ -56,7 +57,7 @@ export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) 
 
     const dateInfo = formatDate(prompt.createdAt);
 
-    return (
+    const modalContent = (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content glass animate-fade-in prompt-detail-modal" onClick={e => e.stopPropagation()}>
                 <header className="modal-header">
@@ -133,4 +134,6 @@ export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) 
             </div>
         </div>
     );
+
+    return createPortal(modalContent, document.getElementById('modal-root'));
 }
