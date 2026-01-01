@@ -100,113 +100,115 @@ export default function Gallery({ user }) {
     );
 
     return (
-        <div className="page-container animate-fade-in">
-            <header className="page-header">
-                <div>
-                    <h1 className="title-gradient">Prompt Gallery</h1>
-                    <p className="subtitle">Curate and analyze your high-quality creations</p>
-                </div>
-                <div className="header-actions">
-                    <button className={`btn-icon large ${isSelectionMode ? 'active' : ''}`} onClick={toggleSelectMode} title="Batch Selection">
-                        <ListChecks size={22} />
-                    </button>
-                    <button className="btn-icon large" onClick={() => setIsSettingsOpen(true)}>
-                        <SettingsIcon size={22} />
-                    </button>
-                    <button className="btn-primary" onClick={() => setIsUploadOpen(true)}>
-                        <Upload size={18} />
-                        <span>Upload Image</span>
-                    </button>
-                </div>
-            </header>
-
-            <div className="gallery-controls">
-                <div className="view-toggle glass">
-                    <button
-                        className={`toggle-btn ${view === 'private' ? 'active' : ''}`}
-                        onClick={() => setView('private')}
-                        disabled={!user}
-                    >
-                        <Shield size={16} />
-                        <span>My Gallery</span>
-                    </button>
-                    <button
-                        className={`toggle-btn ${view === 'public' ? 'active' : ''}`}
-                        onClick={() => setView('public')}
-                    >
-                        <Globe size={16} />
-                        <span>Public</span>
-                    </button>
-                </div>
-
-                <div className="search-bar glass">
-                    <Search size={18} className="search-icon" />
-                    <input
-                        type="text"
-                        placeholder="Search by prompt or tags..."
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                    />
-                </div>
-            </div>
-
-            {isLoadingImages ? (
-                <div className="loading-state glass">
-                    <Loader2 size={48} className="spin" />
-                    <p>Loading your creations...</p>
-                </div>
-            ) : filteredImages.length > 0 ? (
-                <div className="gallery-grid">
-                    {filteredImages.map(img => {
-                        const isSelected = selectedIds.includes(img.id);
-                        return (
-                            <div
-                                key={img.id}
-                                className={`gallery-card glass glass-interactive ${isSelectionMode ? 'selection-active' : ''} ${isSelected ? 'selected' : ''}`}
-                                onClick={() => handleCardClick(img)}
-                            >
-                                <div className="card-image-wrap">
-                                    {isSelectionMode && (
-                                        <div className="selection-overlay">
-                                            <div className="selection-checkbox">
-                                                <Check size={16} />
-                                            </div>
-                                        </div>
-                                    )}
-                                    <img src={img.url} alt={img.description} />
-                                    <div className="card-overlay">
-                                        <button className="btn-copy" onClick={(e) => copyPrompt(e, img.prompt, img.id)}>
-                                            {copiedId === img.id ? <Check size={16} /> : <Copy size={16} />}
-                                        </button>
-                                    </div>
-                                </div>
-                                <div className="card-content">
-                                    <div className="card-tags">
-                                        {img.tags.slice(0, 3).map(tag => (
-                                            <span key={tag} className="tag">{tag}</span>
-                                        ))}
-                                        {img.tags.length > 3 && <span className="tag-more">+{img.tags.length - 3}</span>}
-                                    </div>
-                                    <h4 className="card-title">{img.title || img.description}</h4>
-                                    {img.title && <p className="card-desc-small">{img.description}</p>}
-                                    <p className="card-prompt">{img.prompt}</p>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            ) : (
-                <div className="empty-state glass">
-                    <div className="empty-icon-wrap">
-                        <Upload size={48} />
+        <>
+            <div className="page-container animate-fade-in">
+                <header className="page-header">
+                    <div>
+                        <h1 className="title-gradient">Prompt Gallery</h1>
+                        <p className="subtitle">Curate and analyze your high-quality creations</p>
                     </div>
-                    <h3>Your gallery is empty</h3>
-                    <p>Upload an image and let Grok analyze your prompts.</p>
-                    <button className="btn-secondary" onClick={() => setIsUploadOpen(true)}>
-                        Upload First Image
-                    </button>
+                    <div className="header-actions">
+                        <button className={`btn-icon large ${isSelectionMode ? 'active' : ''}`} onClick={toggleSelectMode} title="Batch Selection">
+                            <ListChecks size={22} />
+                        </button>
+                        <button className="btn-icon large" onClick={() => setIsSettingsOpen(true)}>
+                            <SettingsIcon size={22} />
+                        </button>
+                        <button className="btn-primary" onClick={() => setIsUploadOpen(true)}>
+                            <Upload size={18} />
+                            <span>Upload Image</span>
+                        </button>
+                    </div>
+                </header>
+
+                <div className="gallery-controls">
+                    <div className="view-toggle glass">
+                        <button
+                            className={`toggle-btn ${view === 'private' ? 'active' : ''}`}
+                            onClick={() => setView('private')}
+                            disabled={!user}
+                        >
+                            <Shield size={16} />
+                            <span>My Gallery</span>
+                        </button>
+                        <button
+                            className={`toggle-btn ${view === 'public' ? 'active' : ''}`}
+                            onClick={() => setView('public')}
+                        >
+                            <Globe size={16} />
+                            <span>Public</span>
+                        </button>
+                    </div>
+
+                    <div className="search-bar glass">
+                        <Search size={18} className="search-icon" />
+                        <input
+                            type="text"
+                            placeholder="Search by prompt or tags..."
+                            value={search}
+                            onChange={(e) => setSearch(e.target.value)}
+                        />
+                    </div>
                 </div>
-            )}
+
+                {isLoadingImages ? (
+                    <div className="loading-state glass">
+                        <Loader2 size={48} className="spin" />
+                        <p>Loading your creations...</p>
+                    </div>
+                ) : filteredImages.length > 0 ? (
+                    <div className="gallery-grid">
+                        {filteredImages.map(img => {
+                            const isSelected = selectedIds.includes(img.id);
+                            return (
+                                <div
+                                    key={img.id}
+                                    className={`gallery-card glass glass-interactive ${isSelectionMode ? 'selection-active' : ''} ${isSelected ? 'selected' : ''}`}
+                                    onClick={() => handleCardClick(img)}
+                                >
+                                    <div className="card-image-wrap">
+                                        {isSelectionMode && (
+                                            <div className="selection-overlay">
+                                                <div className="selection-checkbox">
+                                                    <Check size={16} />
+                                                </div>
+                                            </div>
+                                        )}
+                                        <img src={img.url} alt={img.description} />
+                                        <div className="card-overlay">
+                                            <button className="btn-copy" onClick={(e) => copyPrompt(e, img.prompt, img.id)}>
+                                                {copiedId === img.id ? <Check size={16} /> : <Copy size={16} />}
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="card-content">
+                                        <div className="card-tags">
+                                            {img.tags.slice(0, 3).map(tag => (
+                                                <span key={tag} className="tag">{tag}</span>
+                                            ))}
+                                            {img.tags.length > 3 && <span className="tag-more">+{img.tags.length - 3}</span>}
+                                        </div>
+                                        <h4 className="card-title">{img.title || img.description}</h4>
+                                        {img.title && <p className="card-desc-small">{img.description}</p>}
+                                        <p className="card-prompt">{img.prompt}</p>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <div className="empty-state glass">
+                        <div className="empty-icon-wrap">
+                            <Upload size={48} />
+                        </div>
+                        <h3>Your gallery is empty</h3>
+                        <p>Upload an image and let Grok analyze your prompts.</p>
+                        <button className="btn-secondary" onClick={() => setIsUploadOpen(true)}>
+                            Upload First Image
+                        </button>
+                    </div>
+                )}
+            </div>
 
             {isSelectionMode && selectedIds.length > 0 && (
                 <div className="batch-actions-bar glass animate-slide-up">
@@ -251,6 +253,6 @@ export default function Gallery({ user }) {
                 isOpen={isSettingsOpen}
                 onClose={() => setIsSettingsOpen(false)}
             />
-        </div>
+        </>
     );
 }
