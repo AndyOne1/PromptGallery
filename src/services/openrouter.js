@@ -14,18 +14,13 @@ export const analyzePrompt = async (apiKey, prompt) => {
                         content: `You are an AI assistant specialized in analyzing image prompts. 
             Return ONLY a JSON object with "tags" (array of strings), "title" (string), and "description" (string).
             
-            Tagging Rules:
-            1. Be concise and hierarchical. Avoid redundant or micro-tags.
-            2. Choose broad, meaningful categories over fragments. (e.g., use "car interior" alone instead of "interior", "seatbelt", "car seat").
-            3. Hierarchy to follow: 
-               - Category: (e.g., Portrait, Landscape)
-               - Style: (e.g., Cinematic, Cyberpunk, Oil Painting)
-               - Subject: (e.g., Young woman, White wolf)
-               - Environment: (e.g., Snowy forest, Neon city)
-               - Details: (e.g., Glasses, Leather jacket, Golden hour)
-            4. Max 6-8 total tags.
-            5. "title" should be a punchy 3-5 word summary (e.g., "Candid Mirror Selfie").
-            6. "description" should be a more detailed 1-sentence summary.`
+            Rules:
+            1. "title": EXTREMELY SHORT (3-5 words max). Focus on the core subject/action only. NO technical terms, NO full sentences, NO "Reference woman...". 
+               (Good Examples: "Candid Mirror Selfie", "Cyberpunk Cityscape", "Golden Retriever Puppy").
+            2. "description": A concise 1-sentence summary of the scene.
+            3. "tags": Hierarchy of 6-8 tags (Category, Style, Subject, Environment, Details).
+            4. Avoid redundant or micro-tags. Choose broad categories.
+            `
                     },
                     {
                         role: 'user',

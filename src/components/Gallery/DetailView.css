@@ -320,3 +320,9 @@
     color: var(--text-main);
     border-color: var(--accent-primary);
 }
+
+.status-row {
+    margin-top: 0.5rem;
+    display: flex;
+    gap: 0.5rem;
+}

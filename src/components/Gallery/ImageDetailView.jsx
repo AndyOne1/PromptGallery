@@ -85,10 +85,12 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
                                 <h2 className="title-gradient">{image.title || image.description}</h2>
                                 {image.title && <p className="image-description-sub">{image.description}</p>}
                                 {isOwner && (
-                                    <span className={`visibility-badge ${image.isPublic ? 'public' : 'private'}`}>
-                                        {image.isPublic ? <Globe size={14} /> : <Shield size={14} />}
-                                        {image.isPublic ? 'Public' : 'Private'}
-                                    </span>
+                                    <div className="status-row">
+                                        <span className={`visibility-badge ${image.isPublic ? 'public' : 'private'}`}>
+                                            {image.isPublic ? <Globe size={14} /> : <Shield size={14} />}
+                                            {image.isPublic ? 'Public' : 'Private'}
+                                        </span>
+                                    </div>
                                 )}
                             </div>
                             <button className="btn-icon" onClick={onClose}><X size={24} /></button>
