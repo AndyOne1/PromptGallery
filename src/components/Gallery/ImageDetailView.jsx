@@ -156,6 +156,3 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
 
     return createPortal(modalContent, document.getElementById('modal-root'));
 }
-
-return createPortal(modalContent, document.getElementById('modal-root'));
-}

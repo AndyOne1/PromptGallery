@@ -268,3 +268,55 @@
     border-color: #ef4444;
     color: white;
 }
+.image-description-sub {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    line-height: 1.5;
+    margin-top: 0.25rem;
+    max-width: 90%;
+}
+
+.prompt-display.truncated {
+    max-height: 120px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+}
+
+.prompt-display.expanded {
+    max-height: 500px;
+    cursor: pointer;
+}
+
+.expand-overlay-detail {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.6), transparent);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 0.4rem;
+    font-size: 0.75rem;
+    color: var(--accent-primary);
+    font-weight: 600;
+}
+
+.tag-more-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px dashed var(--glass-border);
+    color: var(--text-dim);
+    padding: 0.3rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tag-more-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+    border-color: var(--accent-primary);
+}
