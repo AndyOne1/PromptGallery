@@ -73,7 +73,18 @@ export default function Gallery({ user }) {
 
     const handleBatchDelete = async () => {
         if (!selectedIds.length) return;
-        if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} images? This will also remove them from Cloudinary.`)) return;
+
+        const selectedImages = images.filter(img => selectedIds.includes(img.id));
+        const legacyCount = selectedImages.filter(img => !img.publicId).length;
+
+        let message = `Are you sure you want to delete ${selectedIds.length} images?`;
+        if (legacyCount > 0) {
+            message += `\n\nNote: ${legacyCount} of these were uploaded before Cloudinary synchronization was enabled and must be deleted manually from your Cloudinary dashboard.`;
+        } else {
+            message += `\n\nAll selected images will also be removed from Cloudinary automatically.`;
+        }
+
+        if (!window.confirm(message)) return;
 
         try {
             await galleryApi.delete(selectedIds);

@@ -69,7 +69,14 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
     };
 
     const handleDelete = async () => {
-        if (!window.confirm('Are you sure you want to delete this creation?')) return;
+        let message = 'Are you sure you want to delete this creation?';
+        if (!image.publicId) {
+            message += '\n\nNote: This image was uploaded before Cloudinary synchronization was enabled. It will be removed from your gallery, but you must delete it manually from your Cloudinary dashboard.';
+        } else {
+            message += '\n\nThis will also automatically remove the image from Cloudinary storage.';
+        }
+
+        if (!window.confirm(message)) return;
         setIsUpdating(true);
         try {
             await galleryApi.delete(image.id);
