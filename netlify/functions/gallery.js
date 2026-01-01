@@ -28,11 +28,28 @@ export const handler = async (event) => {
             return { statusCode: 200, headers, body: JSON.stringify(items) };
         }
 
-        // POST: Add item
+        // POST: Add item(s)
         if (event.httpMethod === 'POST') {
             if (!user) return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
 
             const body = JSON.parse(event.body);
+
+            // Handle batch upload
+            if (Array.isArray(body)) {
+                const insertedItems = await db.insert(galleryItems).values(
+                    body.map(item => ({
+                        userId: user.userId,
+                        url: item.url,
+                        prompt: item.prompt,
+                        description: item.description,
+                        tags: item.tags || [],
+                        isPublic: !!item.isPublic
+                    }))
+                ).returning();
+                return { statusCode: 201, headers, body: JSON.stringify(insertedItems) };
+            }
+
+            // Handle single upload (legacy support)
             const [newItem] = await db.insert(galleryItems).values({
                 userId: user.userId,
                 url: body.url,

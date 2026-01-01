@@ -27,8 +27,9 @@ export const galleryApi = {
         const response = await axios.get(`${API_BASE}/gallery?visibility=public`);
         return response.data;
     },
-    upload: async (itemData) => {
-        const response = await axios.post(`${API_BASE}/gallery`, itemData, { headers: getAuthHeaders() });
+    upload: async (data) => {
+        // data can be a single item object or an array of item objects
+        const response = await axios.post(`${API_BASE}/gallery`, data, { headers: getAuthHeaders() });
         return response.data;
     },
     delete: async (id) => {

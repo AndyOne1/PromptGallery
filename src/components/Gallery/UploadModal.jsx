@@ -6,28 +6,42 @@ import { analyzePrompt } from '../../services/openrouter';
 import { compressImage } from '../../utils/imageUtils';
 import { galleryApi } from '../../services/api';
 
-export default function UploadModal({ isOpen, onClose, onUploadComplete }) {
-    const [file, setFile] = useState(null);
-    const [preview, setPreview] = useState(null);
-    const [prompt, setPrompt] = useState('');
+export default function UploadModal({ isOpen, onClose, onUploadComplete, initialPrompt = '', initialTags = [] }) {
+    const [files, setFiles] = useState([]);
+    const [previews, setPreviews] = useState([]);
+    const [prompt, setPrompt] = useState(initialPrompt);
     const [isPublic, setIsPublic] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [status, setStatus] = useState('');
 
+    useEffect(() => {
+        if (isOpen) {
+            setPrompt(initialPrompt);
+        }
+    }, [isOpen, initialPrompt]);
+
     const onDrop = useCallback(acceptedFiles => {
-        const selectedFile = acceptedFiles[0];
-        setFile(selectedFile);
-        setPreview(URL.createObjectURL(selectedFile));
+        setFiles(prev => [...prev, ...acceptedFiles]);
+        const newPreviews = acceptedFiles.map(file => URL.createObjectURL(file));
+        setPreviews(prev => [...prev, ...newPreviews]);
     }, []);
+
+    const removeFile = (index) => {
+        setFiles(prev => prev.filter((_, i) => i !== index));
+        setPreviews(prev => {
+            URL.revokeObjectURL(prev[index]);
+            return prev.filter((_, i) => i !== index);
+        });
+    };
 
     const { getRootProps, getInputProps, isDragActive } = useDropzone({
         onDrop,
         accept: { 'image/*': [] },
-        multiple: false
+        multiple: true
     });
 
     const handleUpload = async () => {
-        if (!file || !prompt) return;
+        if (files.length === 0 || !prompt) return;
 
         const openRouterKey = localStorage.getItem('openrouter_key');
         const cloudName = localStorage.getItem('cloudinary_name');
@@ -39,39 +53,45 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete }) {
         }
 
         setIsUploading(true);
-        setStatus('Optimizing image...');
-
         try {
-            // 1. Compress Image
-            const compressedBlob = await compressImage(file);
-            const compressedFile = new File([compressedBlob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
-                type: 'image/jpeg'
-            });
-
-            setStatus('Uploading image...');
-            // 2. Upload to Cloudinary
-            const cloudData = await uploadToCloudinary(compressedFile, cloudName, uploadPreset);
-
+            // 1. Analyze with OpenRouter (Only ONCE for the whole batch)
             setStatus('Analyzing with AI...');
-            // 3. Analyze with OpenRouter
-            const analysis = await analyzePrompt(openRouterKey, prompt);
+            let analysis = { tags: initialTags, description: '' };
+            if (initialTags.length === 0) {
+                analysis = await analyzePrompt(openRouterKey, prompt);
+            }
+
+            const uploadResults = [];
+
+            // 2. Process each file
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                setStatus(`Processing image ${i + 1}/${files.length}...`);
+
+                // Compress
+                const compressedBlob = await compressImage(file);
+                const compressedFile = new File([compressedBlob], file.name.replace(/\.[^/.]+$/, "") + ".jpg", {
+                    type: 'image/jpeg'
+                });
+
+                // Upload to Cloudinary
+                const cloudData = await uploadToCloudinary(compressedFile, cloudName, uploadPreset);
+
+                uploadResults.push({
+                    url: cloudData.secure_url,
+                    prompt: prompt,
+                    tags: analysis.tags,
+                    description: analysis.description,
+                    isPublic: isPublic
+                });
+            }
 
             setStatus('Saving to database...');
-            // 4. Save to Database via API
-            const imageData = await galleryApi.upload({
-                url: cloudData.secure_url,
-                prompt: prompt,
-                tags: analysis.tags,
-                description: analysis.description,
-                isPublic: isPublic
-            });
+            // 3. Save as batch
+            const savedItems = await galleryApi.upload(uploadResults);
 
-            onUploadComplete(imageData);
-            onClose();
-            setFile(null);
-            setPreview(null);
-            setPrompt('');
-            setIsPublic(false);
+            onUploadComplete(Array.isArray(savedItems) ? savedItems[0] : savedItems);
+            handleClose();
         } catch (error) {
             alert('Upload failed: ' + error.message);
         } finally {
@@ -80,34 +100,51 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete }) {
         }
     };
 
+    const handleClose = () => {
+        setFiles([]);
+        setPreviews(prev => {
+            prev.forEach(url => URL.revokeObjectURL(url));
+            return [];
+        });
+        setPrompt('');
+        setIsPublic(false);
+        onClose();
+    };
+
     if (!isOpen) return null;
 
     return (
         <div className="modal-overlay">
-            <div className="modal-content glass animate-fade-in">
+            <div className="modal-content glass animate-fade-in" style={{ maxWidth: '600px' }}>
                 <header className="modal-header">
-                    <h3>Upload to Gallery</h3>
-                    <button className="btn-icon" onClick={onClose}><X size={20} /></button>
+                    <h3>Upload to Gallery {files.length > 0 && `(${files.length} items)`}</h3>
+                    <button className="btn-icon" onClick={handleClose}><X size={20} /></button>
                 </header>
 
                 <div className="modal-body">
-                    {!preview ? (
-                        <div {...getRootProps()} className={`dropzone ${isDragActive ? 'active' : ''}`}>
-                            <input {...getInputProps()} />
-                            <Upload size={32} />
-                            <p>{isDragActive ? "Drop it here!" : "Drag & drop an image, or click to select"}</p>
-                        </div>
-                    ) : (
-                        <div className="preview-container">
-                            <img src={preview} alt="Preview" className="image-preview" />
-                            <button className="btn-small remove-btn" onClick={() => { setFile(null); setPreview(null); }}>Change Image</button>
+                    <div {...getRootProps()} className={`dropzone ${isDragActive ? 'active' : ''} ${files.length > 0 ? 'compact' : ''}`}>
+                        <input {...getInputProps()} />
+                        <Upload size={32} />
+                        <p>{isDragActive ? "Drop them here!" : "Drag & drop images, or click to select"}</p>
+                    </div>
+
+                    {previews.length > 0 && (
+                        <div className="multi-preview-grid">
+                            {previews.map((url, idx) => (
+                                <div key={idx} className="preview-item">
+                                    <img src={url} alt={`Preview ${idx}`} />
+                                    <button className="remove-preview-btn" onClick={() => removeFile(idx)}>
+                                        <X size={12} />
+                                    </button>
+                                </div>
+                            ))}
                         </div>
                     )}
 
                     <div className="input-group">
-                        <label>Prompt used for this image</label>
+                        <label>Prompt used for {files.length > 1 ? 'these images' : 'this image'}</label>
                         <textarea
-                            placeholder="Paste the prompt you used to generate this image..."
+                            placeholder="Paste the prompt you used..."
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
                             rows={4}
@@ -134,14 +171,14 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete }) {
                         </div>
                     ) : (
                         <>
-                            <button className="btn-secondary" onClick={onClose}>Cancel</button>
+                            <button className="btn-secondary" onClick={handleClose}>Cancel</button>
                             <button
                                 className="btn-primary"
                                 onClick={handleUpload}
-                                disabled={!file || !prompt}
+                                disabled={files.length === 0 || !prompt}
                             >
                                 <Wand2 size={18} />
-                                <span>Process & Save</span>
+                                <span>Process & Save {files.length > 1 ? `(${files.length})` : ''}</span>
                             </button>
                         </>
                     )}

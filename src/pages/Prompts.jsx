@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
-import { MessageSquare, Copy, Check, Trash2, Calendar, Loader2 } from 'lucide-react';
+import { MessageSquare, Copy, Check, Trash2, Calendar, ImagePlus } from 'lucide-react';
 import { promptsApi } from '../services/api';
+import UploadModal from '../components/Gallery/UploadModal';
 import './Prompts.css';
 
 export default function Prompts({ user }) {
     const [prompts, setPrompts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [copiedId, setCopiedId] = useState(null);
+    const [isUploadOpen, setIsUploadOpen] = useState(false);
+    const [selectedPrompt, setSelectedPrompt] = useState(null);
 
     useEffect(() => {
         loadPrompts();
@@ -50,6 +53,11 @@ export default function Prompts({ user }) {
         }
     };
 
+    const handleAttachImage = (prompt) => {
+        setSelectedPrompt(prompt);
+        setIsUploadOpen(true);
+    };
+
     const formatDate = (isoString) => {
         return new Date(isoString).toLocaleDateString('en-US', {
             month: 'short',
@@ -77,10 +85,13 @@ export default function Prompts({ user }) {
                                     <span>{formatDate(p.createdAt)}</span>
                                 </div>
                                 <div className="prompt-actions">
-                                    <button className="btn-icon-small" onClick={() => copyPrompt(p.content || p.prompt, p.id)}>
+                                    <button className="btn-icon-small" onClick={() => copyPrompt(p.content || p.prompt, p.id)} title="Copy Prompt">
                                         {copiedId === p.id ? <Check size={16} /> : <Copy size={16} />}
                                     </button>
-                                    <button className="btn-icon-small delete" onClick={() => deletePrompt(p.id)}>
+                                    <button className="btn-icon-small" onClick={() => handleAttachImage(p)} title="Add Image to Gallery">
+                                        <ImagePlus size={16} />
+                                    </button>
+                                    <button className="btn-icon-small delete" onClick={() => deletePrompt(p.id)} title="Delete Prompt">
                                         <Trash2 size={16} />
                                     </button>
                                 </div>
@@ -105,6 +116,21 @@ export default function Prompts({ user }) {
                     <p>Go to the Generator to create your first high-quality prompt.</p>
                 </div>
             )}
+
+            <UploadModal
+                isOpen={isUploadOpen}
+                onClose={() => {
+                    setIsUploadOpen(false);
+                    setSelectedPrompt(null);
+                }}
+                onUploadComplete={() => {
+                    // Optionally show a success toast or message
+                    setIsUploadOpen(false);
+                    setSelectedPrompt(null);
+                }}
+                initialPrompt={selectedPrompt?.content || selectedPrompt?.prompt}
+                initialTags={selectedPrompt?.refinedTags || selectedPrompt?.tags}
+            />
         </div>
     );
 }
