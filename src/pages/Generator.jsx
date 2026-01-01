@@ -3,8 +3,9 @@ import { useLocation } from 'react-router-dom';
 import { Wand2 } from 'lucide-react';
 import GeneratorWizard from '../components/Generator/GeneratorWizard.jsx';
 import '../components/Generator/Generator.css';
+import { promptsApi } from '../services/api';
 
-export default function Generator() {
+export default function Generator({ user }) {
     const location = useLocation();
     const [showWizard, setShowWizard] = useState(false);
     const [initialSelections, setInitialSelections] = useState(null);
@@ -16,19 +17,24 @@ export default function Generator() {
         }
     }, [location]);
 
-    const handleComplete = (result) => {
-        const saved = JSON.parse(localStorage.getItem('generated_prompts') || '[]');
-        const newPrompt = {
-            id: Date.now(),
-            prompt: result.prompt,
-            tags: result.refined_tags,
-            createdAt: new Date().toISOString()
-        };
-        const updated = [newPrompt, ...saved];
-        localStorage.setItem('generated_prompts', JSON.stringify(updated));
-
-        // We could redirect or show a success message here
-        // For now, let's just stay on the result step in the wizard
+    const handleComplete = async (result) => {
+        if (user) {
+            try {
+                await promptsApi.save(result.prompt, result.refined_tags);
+            } catch (err) {
+                console.error('Failed to save prompt to DB:', err);
+            }
+        } else {
+            const saved = JSON.parse(localStorage.getItem('generated_prompts') || '[]');
+            const newPrompt = {
+                id: Date.now(),
+                prompt: result.prompt,
+                tags: result.refined_tags,
+                createdAt: new Date().toISOString()
+            };
+            const updated = [newPrompt, ...saved];
+            localStorage.setItem('generated_prompts', JSON.stringify(updated));
+        }
     };
 
     return (

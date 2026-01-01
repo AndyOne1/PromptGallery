@@ -105,17 +105,64 @@
     margin-top: 1rem;
 }
 
-.flex-row {
+.gallery-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+.view-toggle {
+    display: flex;
+    padding: 0.25rem;
+    border-radius: 12px;
+}
+
+.toggle-btn {
     display: flex;
     align-items: center;
-}
-
-.gap-2 {
     gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 9px;
+    border: none;
+    background: none;
+    color: var(--text-dim);
+    font-weight: 500;
+    cursor: pointer;
+    transition: all var(--transition-fast);
 }
 
-.text-secondary {
-    color: var(--accent-secondary);
+.toggle-btn:hover:not(:disabled) {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.toggle-btn.active {
+    color: var(--text-main);
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.toggle-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.loading-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 4rem;
+    margin-top: 2rem;
+    text-align: center;
+    color: var(--text-dim);
+}
+
+.search-bar {
+    max-width: 400px;
+    width: 100%;
 }
 
 .btn-copy {

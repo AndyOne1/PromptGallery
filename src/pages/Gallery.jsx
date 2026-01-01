@@ -1,43 +1,62 @@
 import { useState, useEffect } from 'react';
-import { Upload, Search, Settings as SettingsIcon, Copy, Check } from 'lucide-react';
+import { Upload, Search, Settings as SettingsIcon, Copy, Check, Shield, Globe, Loader2 } from 'lucide-react';
 import UploadModal from '../components/Gallery/UploadModal';
 import ImageDetailView from '../components/Gallery/ImageDetailView';
 import Settings from '../components/Settings';
 import '../components/Modal.css';
 import '../components/Gallery/Gallery.css';
 import '../components/Gallery/DetailView.css';
+import { galleryApi } from '../services/api';
 
-export default function Gallery() {
+export default function Gallery({ user }) {
     const [isUploadOpen, setIsUploadOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
     const [images, setImages] = useState([]);
+    const [view, setView] = useState('private'); // 'private' or 'public'
+    const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState('');
     const [copiedId, setCopiedId] = useState(null);
 
     useEffect(() => {
-        const saved = JSON.parse(localStorage.getItem('gallery_images') || '[]');
-        setImages(saved);
-    }, []);
+        loadImages();
+    }, [view, user]);
 
-    const handleUploadComplete = (newImage) => {
-        const updated = [newImage, ...images];
-        setImages(updated);
-        localStorage.setItem('gallery_images', JSON.stringify(updated));
+    const loadImages = async () => {
+        setLoading(true);
+        try {
+            let data;
+            if (view === 'public') {
+                data = await galleryApi.getPublic();
+            } else if (user) {
+                data = await galleryApi.getPrivate();
+            } else {
+                data = [];
+            }
+            setImages(data || []);
+        } catch (err) {
+            console.error('Failed to load images:', err);
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const deleteTag = (imageId, tagToDelete) => {
-        const updated = images.map(img => {
-            if (img.id === imageId) {
-                return { ...img, tags: img.tags.filter(t => t !== tagToDelete) };
-            }
-            return img;
-        });
-        setImages(updated);
-        localStorage.setItem('gallery_images', JSON.stringify(updated));
-        // Update selected image to reflect changes
+    const handleUploadComplete = (newImage) => {
+        setImages([newImage, ...images]);
+    };
+
+    const deleteTag = async (imageId, tagToDelete) => {
+        // Since tags are JSONB, we'd ideally update them on server
+        // For simplicity now, let's keep the filter logic but noted for future DB update
+        const img = images.find(i => i.id === imageId);
+        if (!img) return;
+
+        const updatedTags = img.tags.filter(t => t !== tagToDelete);
+        // TODO: call galleryApi.update(imageId, { tags: updatedTags })
+        setImages(images.map(i => i.id === imageId ? { ...i, tags: updatedTags } : i));
+
         if (selectedImage?.id === imageId) {
-            setSelectedImage(updated.find(img => img.id === imageId));
+            setSelectedImage({ ...selectedImage, tags: updatedTags });
         }
     };
 
@@ -72,6 +91,24 @@ export default function Gallery() {
             </header>
 
             <div className="gallery-controls">
+                <div className="view-toggle glass">
+                    <button
+                        className={`toggle-btn ${view === 'private' ? 'active' : ''}`}
+                        onClick={() => setView('private')}
+                        disabled={!user}
+                    >
+                        <Shield size={16} />
+                        <span>My Gallery</span>
+                    </button>
+                    <button
+                        className={`toggle-btn ${view === 'public' ? 'active' : ''}`}
+                        onClick={() => setView('public')}
+                    >
+                        <Globe size={16} />
+                        <span>Public</span>
+                    </button>
+                </div>
+
                 <div className="search-bar glass">
                     <Search size={18} className="search-icon" />
                     <input
@@ -83,7 +120,12 @@ export default function Gallery() {
                 </div>
             </div>
 
-            {filteredImages.length > 0 ? (
+            {loading ? (
+                <div className="loading-state glass">
+                    <Loader2 size={48} className="spin" />
+                    <p>Loading your creations...</p>
+                </div>
+            ) : filteredImages.length > 0 ? (
                 <div className="gallery-grid">
                     {filteredImages.map(img => (
                         <div key={img.id} className="gallery-card glass glass-interactive" onClick={() => setSelectedImage(img)}>
@@ -131,6 +173,16 @@ export default function Gallery() {
                 isOpen={!!selectedImage}
                 onClose={() => setSelectedImage(null)}
                 onDeleteTag={deleteTag}
+                user={user}
+                onUpdateImage={(updated, deletedId) => {
+                    if (deletedId) {
+                        setImages(images.filter(img => img.id !== deletedId));
+                        setSelectedImage(null);
+                    } else if (updated) {
+                        setImages(images.map(img => img.id === updated.id ? updated : img));
+                        setSelectedImage(updated);
+                    }
+                }}
             />
             <Settings
                 isOpen={isSettingsOpen}

@@ -1,17 +1,46 @@
-import { X, Copy, Check, Trash2, Wand2 } from 'lucide-react';
+import { X, Copy, Check, Trash2, Wand2, Globe, Shield, Loader2 } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { galleryApi } from '../../services/api';
 
-export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, onSaveImages }) {
+export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, user, onUpdateImage }) {
     const [copied, setCopied] = useState(false);
+    const [isUpdating, setIsUpdating] = useState(false);
     const navigate = useNavigate();
 
     if (!isOpen || !image) return null;
+
+    const isOwner = user && image.userId === user.id;
 
     const handleCopy = () => {
         navigator.clipboard.writeText(image.prompt);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
+    };
+
+    const handleTogglePublic = async () => {
+        setIsUpdating(true);
+        try {
+            const updated = await galleryApi.togglePublic(image.id, !image.isPublic);
+            onUpdateImage(updated);
+        } catch (err) {
+            alert('Failed to update visibility');
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!window.confirm('Are you sure you want to delete this creation?')) return;
+        setIsUpdating(true);
+        try {
+            await galleryApi.delete(image.id);
+            onClose();
+            onUpdateImage(null, image.id); // null image, but provide ID to remove from list
+        } catch (err) {
+            alert('Failed to delete image');
+            setIsUpdating(false);
+        }
     };
 
     const handleCreateSimilar = () => {
@@ -38,7 +67,15 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, o
 
                     <div className="detail-info-section">
                         <header className="detail-header">
-                            <h2 className="title-gradient">{image.description}</h2>
+                            <div className="flex-col">
+                                <h2 className="title-gradient">{image.description}</h2>
+                                {isOwner && (
+                                    <span className={`visibility-badge ${image.isPublic ? 'public' : 'private'}`}>
+                                        {image.isPublic ? <Globe size={14} /> : <Shield size={14} />}
+                                        {image.isPublic ? 'Public' : 'Private'}
+                                    </span>
+                                )}
+                            </div>
                             <button className="btn-icon" onClick={onClose}><X size={24} /></button>
                         </header>
 
@@ -69,10 +106,24 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, o
                         </div>
 
                         <footer className="detail-footer">
-                            <button className="btn-primary large full-width" onClick={handleCreateSimilar}>
-                                <Wand2 size={20} />
-                                <span>Create Similar Prompt</span>
-                            </button>
+                            <div className="action-row">
+                                <button className="btn-primary" onClick={handleCreateSimilar} disabled={isUpdating}>
+                                    <Wand2 size={20} />
+                                    <span>Create Similar</span>
+                                </button>
+
+                                {isOwner && (
+                                    <>
+                                        <button className={`btn-secondary ${image.isPublic ? 'active' : ''}`} onClick={handleTogglePublic} disabled={isUpdating}>
+                                            {isUpdating ? <Loader2 className="spin" size={18} /> : (image.isPublic ? <Shield size={18} /> : <Globe size={18} />)}
+                                            <span>{image.isPublic ? 'Make Private' : 'Publish'}</span>
+                                        </button>
+                                        <button className="btn-icon-danger" onClick={handleDelete} disabled={isUpdating}>
+                                            <Trash2 size={20} />
+                                        </button>
+                                    </>
+                                )}
+                            </div>
                         </footer>
                     </div>
                 </div>

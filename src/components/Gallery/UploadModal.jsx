@@ -1,14 +1,16 @@
 import { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
-import { X, Upload, Loader2, Wand2 } from 'lucide-react';
+import { X, Upload, Loader2, Wand2, Globe, Shield } from 'lucide-react';
 import { uploadToCloudinary } from '../../services/cloudinary';
 import { analyzePrompt } from '../../services/openrouter';
 import { compressImage } from '../../utils/imageUtils';
+import { galleryApi } from '../../services/api';
 
 export default function UploadModal({ isOpen, onClose, onUploadComplete }) {
     const [file, setFile] = useState(null);
     const [preview, setPreview] = useState(null);
     const [prompt, setPrompt] = useState('');
+    const [isPublic, setIsPublic] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [status, setStatus] = useState('');
 
@@ -27,7 +29,6 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete }) {
     const handleUpload = async () => {
         if (!file || !prompt) return;
 
-        // Get API keys from localStorage (for now)
         const openRouterKey = localStorage.getItem('openrouter_key');
         const cloudName = localStorage.getItem('cloudinary_name');
         const uploadPreset = localStorage.getItem('cloudinary_preset');
@@ -52,25 +53,25 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete }) {
             const cloudData = await uploadToCloudinary(compressedFile, cloudName, uploadPreset);
 
             setStatus('Analyzing with AI...');
-            // 2. Analyze with OpenRouter
+            // 3. Analyze with OpenRouter
             const analysis = await analyzePrompt(openRouterKey, prompt);
 
-            // 3. Complete
-            const imageData = {
-                id: Date.now(),
+            setStatus('Saving to database...');
+            // 4. Save to Database via API
+            const imageData = await galleryApi.upload({
                 url: cloudData.secure_url,
                 prompt: prompt,
                 tags: analysis.tags,
                 description: analysis.description,
-                createdAt: new Date().toISOString()
-            };
+                isPublic: isPublic
+            });
 
             onUploadComplete(imageData);
             onClose();
-            // Reset
             setFile(null);
             setPreview(null);
             setPrompt('');
+            setIsPublic(false);
         } catch (error) {
             alert('Upload failed: ' + error.message);
         } finally {
@@ -111,6 +112,17 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete }) {
                             onChange={(e) => setPrompt(e.target.value)}
                             rows={4}
                         />
+                    </div>
+
+                    <div className="visibility-options">
+                        <label className={`visibility-chip ${!isPublic ? 'active' : ''}`} onClick={() => setIsPublic(false)}>
+                            <Shield size={16} />
+                            <span>Private</span>
+                        </label>
+                        <label className={`visibility-chip ${isPublic ? 'active' : ''}`} onClick={() => setIsPublic(true)}>
+                            <Globe size={16} />
+                            <span>Public Gallery</span>
+                        </label>
                     </div>
                 </div>
 

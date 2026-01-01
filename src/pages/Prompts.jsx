@@ -1,15 +1,33 @@
 import { useState, useEffect } from 'react';
-import { MessageSquare, Copy, Check, Trash2, Calendar } from 'lucide-react';
+import { MessageSquare, Copy, Check, Trash2, Calendar, Loader2 } from 'lucide-react';
+import { promptsApi } from '../services/api';
 import './Prompts.css';
 
-export default function Prompts() {
+export default function Prompts({ user }) {
     const [prompts, setPrompts] = useState([]);
+    const [loading, setLoading] = useState(false);
     const [copiedId, setCopiedId] = useState(null);
 
     useEffect(() => {
-        const saved = JSON.parse(localStorage.getItem('generated_prompts') || '[]');
-        setPrompts(saved);
-    }, []);
+        loadPrompts();
+    }, [user]);
+
+    const loadPrompts = async () => {
+        setLoading(true);
+        try {
+            let data;
+            if (user) {
+                data = await promptsApi.get();
+            } else {
+                data = JSON.parse(localStorage.getItem('generated_prompts') || '[]');
+            }
+            setPrompts(data || []);
+        } catch (err) {
+            console.error('Failed to load prompts:', err);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const copyPrompt = (text, id) => {
         navigator.clipboard.writeText(text);
@@ -17,10 +35,19 @@ export default function Prompts() {
         setTimeout(() => setCopiedId(null), 2000);
     };
 
-    const deletePrompt = (id) => {
-        const updated = prompts.filter(p => p.id !== id);
-        setPrompts(updated);
-        localStorage.setItem('generated_prompts', JSON.stringify(updated));
+    const deletePrompt = async (id) => {
+        if (user) {
+            try {
+                await promptsApi.delete(id);
+                setPrompts(prompts.filter(p => p.id !== id));
+            } catch (err) {
+                alert('Failed to delete prompt');
+            }
+        } else {
+            const updated = prompts.filter(p => p.id !== id);
+            setPrompts(updated);
+            localStorage.setItem('generated_prompts', JSON.stringify(updated));
+        }
     };
 
     const formatDate = (isoString) => {
