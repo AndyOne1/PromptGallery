@@ -1,41 +1,31 @@
-import { X, Copy, Check, Trash2, Calendar, Hash, Clock, Image as ImageIcon } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { X, Copy, Check, Trash2, Calendar, Hash, Clock, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { galleryApi } from '../../services/api';
 import { normalizePromptText } from '../../utils/stringUtils';
+import { useData } from '../../context/DataContext';
 
 export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) {
     const [copied, setCopied] = useState(false);
-    const [linkedImages, setLinkedImages] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [showAllTags, setShowAllTags] = useState(false);
+    const { privateImages } = useData();
 
     useEffect(() => {
         if (isOpen) {
             document.body.classList.add('modal-open');
-            if (prompt) loadLinkedImages();
         } else {
             document.body.classList.remove('modal-open');
         }
         return () => document.body.classList.remove('modal-open');
-    }, [isOpen, prompt]);
+    }, [isOpen]);
 
-    const loadLinkedImages = async () => {
-        setIsLoading(true);
-        try {
-            const allImages = await galleryApi.getPrivate();
-            const normalizedContent = normalizePromptText(prompt.content || prompt.prompt);
-            const matches = allImages.filter(img =>
-                normalizePromptText(img.prompt) === normalizedContent
-            );
-            setLinkedImages(matches);
-        } catch (err) {
-            console.error('Failed to load linked images:', err);
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    const linkedImages = useMemo(() => {
+        if (!prompt) return [];
+        const normalizedContent = normalizePromptText(prompt.content || prompt.prompt);
+        return privateImages
+            .filter(img => normalizePromptText(img.prompt) === normalizedContent)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }, [prompt, privateImages]);
 
     if (!isOpen || !prompt) return null;
 

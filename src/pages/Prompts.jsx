@@ -7,9 +7,10 @@ import './Prompts.css';
 import '../components/Prompts/PromptDetailView.css';
 
 import { useData } from '../context/DataContext';
+import { normalizePromptText } from '../utils/stringUtils';
 
 export default function Prompts({ user }) {
-    const { prompts, isLoadingPrompts, fetchPrompts, removePromptFromCache } = useData();
+    const { prompts, isLoadingPrompts, fetchPrompts, removePromptFromCache, privateImages } = useData();
     const [copiedId, setCopiedId] = useState(null);
     const [isUploadOpen, setIsUploadOpen] = useState(false);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -52,6 +53,20 @@ export default function Prompts({ user }) {
     const handleOpenDetail = (prompt) => {
         setSelectedPrompt(prompt);
         setIsDetailOpen(true);
+    };
+
+    const getEffectiveTitle = (p) => {
+        if (p.title) return p.title;
+
+        const content = p.content || p.prompt;
+        if (!content) return 'Untitled Prompt';
+        const normalized = normalizePromptText(content);
+
+        const matches = privateImages
+            .filter(img => normalizePromptText(img.prompt) === normalized)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        return matches.length > 0 ? matches[0].title : 'Untitled Prompt';
     };
 
     const formatDate = (isoString) => {
@@ -141,7 +156,7 @@ export default function Prompts({ user }) {
                                         </div>
                                     </div>
                                     <div className="prompt-body">
-                                        <h3 className="prompt-card-title">{p.title || 'Untitled Prompt'}</h3>
+                                        <h3 className="prompt-card-title">{getEffectiveTitle(p)}</h3>
                                         <p className="prompt-text-truncate">{p.content || p.prompt}</p>
                                     </div>
                                     <div className="prompt-footer">
