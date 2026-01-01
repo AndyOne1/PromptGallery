@@ -1,4 +1,4 @@
-import { db } from './db.js';
+import { getDb } from './db.js';
 import { galleryItems } from './schema.js';
 import { eq, and, or } from 'drizzle-orm';
 import { verifyToken, headers } from './utils.js';
@@ -9,6 +9,7 @@ export const handler = async (event) => {
     }
 
     const user = verifyToken(event);
+    const db = getDb();
 
     try {
         // GET: Fetch items

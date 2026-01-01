@@ -1,6 +1,6 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { db } from './db.js';
+import { getDb } from './db.js';
 import { users } from './schema.js';
 import { eq } from 'drizzle-orm';
 
@@ -23,6 +23,7 @@ export const handler = async (event) => {
 
     try {
         const { action, email, password, name } = JSON.parse(event.body);
+        const db = getDb();
 
         if (action === 'signup') {
             if (!email || !password) {

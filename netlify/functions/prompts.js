@@ -1,4 +1,4 @@
-import { db } from './db.js';
+import { getDb } from './db.js';
 import { savedPrompts } from './schema.js';
 import { eq, and } from 'drizzle-orm';
 import { verifyToken, headers } from './utils.js';
@@ -10,6 +10,8 @@ export const handler = async (event) => {
 
     const user = verifyToken(event);
     if (!user) return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
+
+    const db = getDb();
 
     try {
         // GET: Fetch user's saved prompts
