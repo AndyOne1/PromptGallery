@@ -485,6 +485,16 @@
     box-shadow: 0 0 10px rgba(139, 92, 246, 0.2);
 }
 
+.reference-prompt-view {
+    padding: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--text-secondary);
+    font-style: italic;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
 .tag-cloud {
     display: flex;
     flex-wrap: wrap;

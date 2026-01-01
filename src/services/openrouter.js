@@ -72,12 +72,12 @@ export const analyzeTemplateForWizard = async (apiKey, templateData, wizardSchem
             WIZARD SCHEMA: ${JSON.stringify(wizardSchema)}
             
             Rules:
-            1. Analyze the provided template (image or prompt text) and map it to the PROVIDED wizard schema.
-            2. For each step, you MUST choose the BEST matching "value" from the provided options. DO NOT invent new values.
-            3. For multi_select steps, the result must be an object where keys are the specific "sections" names and values are arrays of selected "value" strings.
-            4. If a step or option is not clearly applicable, skip it.
-            5. COMPULSORY: You MUST identify the "identified_category". If it's even remotely photographic, use "amateur". 
-            6. Return ONLY a JSON object in this format: 
+            1. Analyze the provided template and find the BEST match in the PROVIDED wizard schema.
+            2. MANDATORY: Identify the "identified_category" from the "root" step options (e.g., "amateur"). If the images looks like a snapshot, phone photo, or candid moment, it is definitely "amateur".
+            3. For the identified category path (e.g., all steps starting with "amateur_"), pick the BEST matching "value" for each step.
+            4. For multi_select steps, return an object mapping section names to arrays of value strings.
+            5. ONLY use values provided in the schema. Do not invent tags.
+            6. Return ONLY a JSON object: 
                { 
                  "selections": { "step_id": { "value": "val" }, "multi_step_id": { "Section Name": ["val1", "val2"] } }, 
                  "identified_category": "amateur" 

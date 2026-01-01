@@ -94,9 +94,8 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
                     setResult(null);
                     setCurrentStepId('finish');
                     if (initialData.useReference) setUseReference(true);
-                    if (initialData.originalPrompt) {
-                        setCustomInstruction(prev => prev ? `${prev}\n\nReference Prompt: ${initialData.originalPrompt}` : `Reference Prompt: ${initialData.originalPrompt}`);
-                    }
+                    // Open safety and the first wizard step by default to show progress
+                    setOpenSections(['safety', 'amateur_1_1']);
                 } catch (error) {
                     console.error('Wizard analysis failed:', error);
                     setResult(null);
@@ -314,6 +313,27 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
                                 </div>
                             </div>
                         </div>
+
+                        {/* 1.5 REFERENCE PROMPT (READ ONLY) */}
+                        {initialData?.originalPrompt && (
+                            <div className={`accordion-row glass ${openSections.includes('reference') ? 'open' : ''}`}>
+                                <header className="accordion-trigger" onClick={() => toggleSection('reference')}>
+                                    <div className="trigger-label">
+                                        <Hash size={16} />
+                                        <span>Reference Prompt</span>
+                                    </div>
+                                    <div className="trigger-status">
+                                        <span className="status-dot active"></span>
+                                        <ChevronDown size={18} className="icon-arrow" />
+                                    </div>
+                                </header>
+                                <div className="accordion-content">
+                                    <div className="reference-prompt-view glass">
+                                        <p>{initialData.originalPrompt}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* 2. EXTRA INSTRUCTIONS */}
                         <div className={`accordion-row glass ${openSections.includes('info') ? 'open' : ''}`}>
