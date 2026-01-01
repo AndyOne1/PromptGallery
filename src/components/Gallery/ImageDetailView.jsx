@@ -82,8 +82,14 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
                     <div className="detail-info-section">
                         <header className="detail-header">
                             <div className="flex-col">
-                                <h2 className="title-gradient">{image.title || image.description}</h2>
-                                {image.title && <p className="image-description-sub">{image.description}</p>}
+                                {image.title ? (
+                                    <>
+                                        <h2 className="title-gradient">{image.title}</h2>
+                                        <p className="image-description-sub">{image.description}</p>
+                                    </>
+                                ) : (
+                                    <h2 className="title-gradient">{image.description}</h2>
+                                )}
                                 {isOwner && (
                                     <div className="status-row">
                                         <span className={`visibility-badge ${image.isPublic ? 'public' : 'private'}`}>

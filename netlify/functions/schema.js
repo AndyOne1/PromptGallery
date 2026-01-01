@@ -13,6 +13,7 @@ export const galleryItems = pgTable('gallery_items', {
     userId: integer('user_id').references(() => users.id).notNull(),
     url: text('url').notNull(),
     prompt: text('prompt').notNull(),
+    title: text('title'),
     description: text('description'),
     tags: jsonb('tags').$type().notNull(),
     isPublic: boolean('is_public').default(false).notNull(),
