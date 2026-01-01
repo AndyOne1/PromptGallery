@@ -11,9 +11,26 @@ export default function Generator({ user }) {
     const [initialSelections, setInitialSelections] = useState(location.state?.initialSelections || null);
 
     useEffect(() => {
+        // 1. Check location state
         if (location.state?.initialSelections) {
             setInitialSelections(location.state.initialSelections);
             setShowWizard(true);
+            window.history.replaceState({}, document.title);
+            localStorage.removeItem('pending_template'); // Ensure backup is also cleared
+        }
+        // 2. Fallback to localStorage (survives refreshes or state loss)
+        else {
+            const saved = localStorage.getItem('pending_template');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    setInitialSelections(data);
+                    setShowWizard(true);
+                    localStorage.removeItem('pending_template');
+                } catch (e) {
+                    localStorage.removeItem('pending_template');
+                }
+            }
         }
     }, [location.key]);
 

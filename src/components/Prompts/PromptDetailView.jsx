@@ -123,13 +123,13 @@ export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) 
                 <footer className="modal-footer">
                     <div className="flex-row gap-4">
                         <button className="btn-primary" onClick={() => {
+                            const data = {
+                                originalPrompt: fullText,
+                                tags: tags
+                            };
+                            localStorage.setItem('pending_template', JSON.stringify(data));
                             navigate('/generator', {
-                                state: {
-                                    initialSelections: {
-                                        originalPrompt: fullText,
-                                        tags: tags
-                                    }
-                                }
+                                state: { initialSelections: data }
                             });
                         }}>
                             <Wand2 size={20} />

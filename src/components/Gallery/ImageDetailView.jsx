@@ -87,15 +87,17 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
     };
 
     const handleCreateSimilar = () => {
+        const data = {
+            imageUrl: image.url,
+            originalPrompt: image.prompt,
+            category: image.tags[0] || '',
+            tags: image.tags
+        };
+        // Persist to localStorage as backup for state transfer
+        localStorage.setItem('pending_template', JSON.stringify(data));
+
         navigate('/generator', {
-            state: {
-                initialSelections: {
-                    imageUrl: image.url,
-                    originalPrompt: image.prompt,
-                    category: image.tags[0] || '',
-                    tags: image.tags
-                }
-            }
+            state: { initialSelections: data }
         });
     };
 
