@@ -126,8 +126,8 @@
 }
 
 .accordion-row.open .accordion-content {
-    max-height: 1000px;
-    /* High enough for content */
+    max-height: 2000px;
+    /* High enough for even very long text */
     padding: 1rem;
     border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
