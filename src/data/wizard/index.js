@@ -6,6 +6,9 @@ import { locationSteps } from './locationSteps';
 import { characterSteps } from './characterSteps';
 import { atmosphereSteps } from './atmosphereSteps';
 import { qualitySteps } from './qualitySteps';
+import { expressionSteps } from './expressionSteps';
+import { poseSteps } from './poseSteps';
+import { objectSteps } from './objectSteps';
 
 export const WIZARD_DATA = {
     steps: {
@@ -16,6 +19,9 @@ export const WIZARD_DATA = {
         ...locationSteps,
         ...characterSteps,
         ...atmosphereSteps,
-        ...qualitySteps
+        ...qualitySteps,
+        ...expressionSteps,
+        ...poseSteps,
+        ...objectSteps
     }
 };

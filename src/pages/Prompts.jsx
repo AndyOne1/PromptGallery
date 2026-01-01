@@ -2,13 +2,16 @@ import { useState, useEffect, useMemo } from 'react';
 import { MessageSquare, Copy, Check, Trash2, Calendar, ImagePlus, Search, Hash, Clock } from 'lucide-react';
 import { promptsApi } from '../services/api';
 import UploadModal from '../components/Gallery/UploadModal';
+import PromptDetailView from '../components/Prompts/PromptDetailView';
 import './Prompts.css';
+import '../components/Prompts/PromptDetailView.css';
 
 export default function Prompts({ user }) {
     const [prompts, setPrompts] = useState([]);
     const [loading, setLoading] = useState(false);
     const [copiedId, setCopiedId] = useState(null);
     const [isUploadOpen, setIsUploadOpen] = useState(false);
+    const [isDetailOpen, setIsDetailOpen] = useState(false);
     const [selectedPrompt, setSelectedPrompt] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
 
@@ -61,9 +64,15 @@ export default function Prompts({ user }) {
         }
     };
 
-    const handleAttachImage = (prompt) => {
+    const handleAttachImage = (e, prompt) => {
+        e.stopPropagation();
         setSelectedPrompt(prompt);
         setIsUploadOpen(true);
+    };
+
+    const handleOpenDetail = (prompt) => {
+        setSelectedPrompt(prompt);
+        setIsDetailOpen(true);
     };
 
     const formatDate = (isoString) => {
@@ -112,7 +121,7 @@ export default function Prompts({ user }) {
                         const seqNumber = filteredPrompts.length - index;
 
                         return (
-                            <div key={p.id} className="prompt-item glass">
+                            <div key={p.id} className="prompt-item glass clickable" onClick={() => handleOpenDetail(p)}>
                                 <div className="prompt-header">
                                     <div className="prompt-meta">
                                         <div className="prompt-number">
@@ -129,13 +138,13 @@ export default function Prompts({ user }) {
                                         </div>
                                     </div>
                                     <div className="prompt-actions">
-                                        <button className="btn-icon-small" onClick={() => copyPrompt(p.content || p.prompt, p.id)} title="Copy Prompt">
+                                        <button className="btn-icon-small" onClick={(e) => { e.stopPropagation(); copyPrompt(p.content || p.prompt, p.id); }} title="Copy Prompt">
                                             {copiedId === p.id ? <Check size={16} /> : <Copy size={16} />}
                                         </button>
-                                        <button className="btn-icon-small" onClick={() => handleAttachImage(p)} title="Add Image to Gallery">
+                                        <button className="btn-icon-small" onClick={(e) => handleAttachImage(e, p)} title="Add Image to Gallery">
                                             <ImagePlus size={16} />
                                         </button>
-                                        <button className="btn-icon-small delete" onClick={() => deletePrompt(p.id)} title="Delete Prompt">
+                                        <button className="btn-icon-small delete" onClick={(e) => { e.stopPropagation(); deletePrompt(p.id); }} title="Delete Prompt">
                                             <Trash2 size={16} />
                                         </button>
                                     </div>
@@ -174,6 +183,15 @@ export default function Prompts({ user }) {
                 }}
                 initialPrompt={selectedPrompt?.content || selectedPrompt?.prompt}
                 initialTags={selectedPrompt?.refinedTags || selectedPrompt?.tags}
+            />
+            <PromptDetailView
+                isOpen={isDetailOpen}
+                prompt={selectedPrompt}
+                onClose={() => {
+                    setIsDetailOpen(false);
+                    setSelectedPrompt(null);
+                }}
+                onDelete={deletePrompt}
             />
         </div>
     );

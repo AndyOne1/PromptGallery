@@ -122,6 +122,32 @@
     border-top: 1px solid var(--glass-border);
     display: flex;
     justify-content: space-between;
+    align-items: center;
+}
+
+.wizard-actions-right {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.btn-skip {
+    border-color: transparent !important;
+    opacity: 0.6;
+    font-size: 0.9rem;
+    background: transparent;
+    color: var(--text-dim);
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    transition: all var(--transition-fast);
+}
+
+.btn-skip:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text-main);
 }
 
 .subtitle-small {

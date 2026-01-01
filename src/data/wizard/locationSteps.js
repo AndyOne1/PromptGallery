@@ -38,13 +38,38 @@ export const locationSteps = {
         id: 'step_location_interior',
         question: 'Welcher Innenraum?',
         options: [
-            { label: 'Luxus-Wohnzimmer', value: 'living_room', output_tags: ['luxury living room interior', 'high-end furniture'], next_step_id: 'step_atmosphere_light' },
-            { label: 'Modernes Schlafzimmer', value: 'bedroom', output_tags: ['modern bedroom interior', 'cozy atmosphere'], next_step_id: 'step_atmosphere_light' },
-            { label: 'Büro / Bibliothek', value: 'office', output_tags: ['home office', 'library', 'wooden bookshelves'], next_step_id: 'step_atmosphere_light' },
-            { label: 'Restaurant / Bar', value: 'restaurant', output_tags: ['fancy restaurant', 'bar interior', 'ambient lighting'], next_step_id: 'step_atmosphere_light' },
-            { label: 'Krankenhaus / Labor', value: 'lab', output_tags: ['scientific laboratory', 'hospital room', 'sterile environment'], next_step_id: 'step_atmosphere_light' },
-            { label: 'Atelier / Werkstatt', value: 'studio', output_tags: ['artist studio', 'workshop', 'creative mess'], next_step_id: 'step_atmosphere_light' }
+            { label: 'Wohnzimmer', value: 'living_room', output_tags: ['living room interior'], next_step_id: 'step_interior_vibe' },
+            { label: 'Schlafzimmer', value: 'bedroom', output_tags: ['bedroom interior'], next_step_id: 'step_interior_vibe' },
+            { label: 'Badezimmer', value: 'bathroom', output_tags: ['bathroom interior'], next_step_id: 'step_interior_vibe' },
+            { label: 'Küche', value: 'kitchen', output_tags: ['kitchen interior'], next_step_id: 'step_interior_vibe' },
+            { label: 'Büro / Bibliothek', value: 'office', output_tags: ['home office', 'library'], next_step_id: 'step_interior_vibe' },
+            { label: 'Restaurant / Bar', value: 'restaurant', output_tags: ['restaurant', 'bar interior'], next_step_id: 'step_interior_vibe' }
         ]
+    },
+    step_interior_vibe: {
+        id: 'step_interior_vibe',
+        question: 'Welcher Stil & Zustand?',
+        multi_select: true,
+        sections: [
+            {
+                name: 'Zustand',
+                options: [
+                    { label: 'Modern & Clean', value: 'modern', output_tags: ['modern architecture', 'clean interior', 'minimalist'] },
+                    { label: 'Luxuriös / Reich', value: 'luxury', output_tags: ['luxury interior', 'expensive furniture', 'high-end decor'] },
+                    { label: 'Einfach / Arm', value: 'poor', output_tags: ['simple interior', 'worn-out furniture', 'humble home'] },
+                    { label: 'Unaufgeräumt / Messy', value: 'messy', output_tags: ['cluttered room', 'messy interior', 'lived-in atmosphere'] }
+                ]
+            },
+            {
+                name: 'Details',
+                options: [
+                    { label: 'Dreckiger Spiegel', value: 'dirty_mirror', output_tags: ['dirty mirror', 'smudges on glass'] },
+                    { label: 'Menschen im Hintergrund', value: 'crowd_bg', output_tags: ['people in the background', 'unfocussed background people'] },
+                    { label: 'Pflanzen', value: 'plants', output_tags: ['indoor plants', 'greenery'] }
+                ]
+            }
+        ],
+        next_step_id: 'step_atmosphere_light'
     },
     step_location_fantasy: {
         id: 'step_location_fantasy',

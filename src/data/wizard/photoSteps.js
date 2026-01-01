@@ -67,10 +67,10 @@ export const photoSteps = {
         id: 'step_amateur_type',
         question: 'Was für einen Snapshot?',
         options: [
-            { label: 'Selfie / Mirror Selfie', value: 'selfie', output_tags: ['mirror selfie', 'tight selfie composition'], next_step_id: 'step_amateur_gear' },
-            { label: 'Alltags-Moment (Candid)', value: 'candid', output_tags: ['candid photography', 'unpolished snapshot'], next_step_id: 'step_amateur_gear' },
-            { label: 'Abend / Party (Night)', value: 'night', output_tags: ['night out', 'party atmosphere'], next_step_id: 'step_amateur_gear' },
-            { label: 'Instagram Story Vibe', value: 'story', output_tags: ['instagram story aesthetic', 'influencer lifestyle photography'], next_step_id: 'step_amateur_gear' }
+            { label: 'Selfie / Mirror Selfie', value: 'selfie', output_tags: ['mirror selfie', 'tight selfie composition'], next_step_id: 'step_objects_smartphone' },
+            { label: 'Alltags-Moment (Candid)', value: 'candid', output_tags: ['candid photography', 'unpolished snapshot'], next_step_id: 'step_expression' },
+            { label: 'Abend / Party (Night)', value: 'night', output_tags: ['night out', 'party atmosphere'], next_step_id: 'step_expression' },
+            { label: 'Instagram Story Vibe', value: 'story', output_tags: ['instagram story aesthetic', 'influencer lifestyle photography'], next_step_id: 'step_expression' }
         ]
     },
     step_amateur_gear: {

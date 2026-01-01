@@ -342,18 +342,24 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
                         <ChevronLeft size={18} /> Back
                     </button>
 
-                    {currentStepId === 'finish' ? (
-                        <button className="btn-primary" onClick={handleGenerate} disabled={isGenerating}>
-                            {isGenerating ? <RefreshCcw size={18} className="spin" /> : <Wand2 size={18} />}
-                            {isGenerating ? 'Generating...' : 'Generate Prompt'}
-                        </button>
-                    ) : (
-                        currentStep?.multi_select && (
+                    <div className="wizard-actions-right">
+                        {currentStepId !== 'finish' && (
+                            <button className="btn-secondary btn-skip" onClick={nextStep} disabled={isGenerating}>
+                                Skip
+                            </button>
+                        )}
+
+                        {currentStepId === 'finish' ? (
+                            <button className="btn-primary" onClick={handleGenerate} disabled={isGenerating}>
+                                {isGenerating ? <RefreshCcw size={18} className="spin" /> : <Wand2 size={18} />}
+                                {isGenerating ? 'Generating...' : 'Generate Prompt'}
+                            </button>
+                        ) : (
                             <button className="btn-primary" onClick={nextStep} disabled={!isStepComplete()}>
                                 Next <ChevronRight size={18} />
                             </button>
-                        )
-                    )}
+                        )}
+                    </div>
                 </footer>
             )}
         </div>
