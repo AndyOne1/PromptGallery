@@ -1,5 +1,6 @@
-import { X, Copy, Check, Trash2, Calendar, Hash, Clock, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { X, Copy, Check, Trash2, Calendar, Hash, Clock, Image as ImageIcon, Loader2, Wand2 } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { normalizePromptText } from '../../utils/stringUtils';
 import { useData } from '../../context/DataContext';
@@ -7,6 +8,7 @@ import ConfirmationModal from '../UI/ConfirmationModal';
 
 export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) {
     const [copied, setCopied] = useState(false);
+    const navigate = useNavigate();
     const [isExpanded, setIsExpanded] = useState(false);
     const [showAllTags, setShowAllTags] = useState(false);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
@@ -119,10 +121,25 @@ export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) 
                 </div>
 
                 <footer className="modal-footer">
-                    <button className="btn-secondary text-danger" onClick={() => setIsDeleteConfirmOpen(true)}>
-                        <Trash2 size={18} />
-                        <span>Delete Prompt</span>
-                    </button>
+                    <div className="flex-row gap-4">
+                        <button className="btn-primary" onClick={() => {
+                            navigate('/generator', {
+                                state: {
+                                    initialSelections: {
+                                        originalPrompt: fullText,
+                                        tags: tags
+                                    }
+                                }
+                            });
+                        }}>
+                            <Wand2 size={20} />
+                            <span>Create Similar</span>
+                        </button>
+                        <button className="btn-secondary text-danger" onClick={() => setIsDeleteConfirmOpen(true)}>
+                            <Trash2 size={18} />
+                            <span>Delete Prompt</span>
+                        </button>
+                    </div>
                     <button className="btn-primary" onClick={onClose}>Close</button>
                 </footer>
 

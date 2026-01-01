@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { WIZARD_DATA } from '../../data/wizard';
-import { generateFinalPrompt, analyzeImageForWizard } from '../../services/openrouter';
+import { generateFinalPrompt, analyzeTemplateForWizard } from '../../services/openrouter';
 import { ChevronDown, ChevronRight, ChevronLeft, Wand2, Check, RefreshCcw, Save, Trash2, Eye, Shield, AlertTriangle, Loader2 } from 'lucide-react';
 
 const GeneratorWizard = ({ onComplete, initialData }) => {
@@ -23,13 +23,12 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
 
     useEffect(() => {
         const analyzeIdData = async () => {
-            if (initialData && initialData.imageUrl) {
+            if (initialData && (initialData.imageUrl || initialData.originalPrompt)) {
                 const key = localStorage.getItem('openrouter_key');
                 if (!key) return;
 
                 setIsAnalyzing(true);
                 try {
-                    // Send basic wizard schema for mapping
                     const schema = Object.keys(WIZARD_DATA.steps).reduce((acc, id) => {
                         const step = WIZARD_DATA.steps[id];
                         acc[id] = {
@@ -44,7 +43,11 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
                         return acc;
                     }, {});
 
-                    const mapping = await analyzeImageForWizard(key, initialData.imageUrl, schema);
+                    const mapping = await analyzeTemplateForWizard(key, {
+                        imageUrl: initialData.imageUrl,
+                        prompt: initialData.originalPrompt
+                    }, schema);
+
                     if (mapping?.selections) {
                         const mappedSelections = {};
                         const foundSteps = new Set();
@@ -55,11 +58,10 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
 
                             if (step.multi_select) {
                                 mappedSelections[stepId] = selection;
-                                if (Object.values(selection).some(v => v.length > 0)) {
+                                if (selection && Object.values(selection).some(v => Array.isArray(v) && v.length > 0)) {
                                     foundSteps.add(stepId);
                                 }
                             } else {
-                                // Find the option object by value
                                 const val = typeof selection === 'object' ? selection.value : selection;
                                 const option = step.options?.find(o => o.value === val);
                                 if (option) {
@@ -71,8 +73,12 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
 
                         setSelections(mappedSelections);
 
-                        // Populate history
-                        if (mapping.identified_category?.toLowerCase().includes('amateur')) {
+                        // Populate history - MANDATORY CATEGORY DISPLAY
+                        // We force the amateur path for templates as it's the primary/only category currently
+                        // This ensures the user sees all 19 sections for fine-tuning.
+                        const isAmateur = !mapping.identified_category || mapping.identified_category.toLowerCase().includes('amateur');
+
+                        if (isAmateur || foundSteps.size > 0) {
                             setHistory([
                                 'amateur_1_1', 'amateur_1_2', 'amateur_1_3', 'amateur_1_4',
                                 'amateur_1_5', 'amateur_1_6', 'amateur_1_7', 'amateur_1_8',
@@ -81,16 +87,18 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
                                 'amateur_1_18'
                             ]);
                         } else {
-                            // If not recognized, at least show the steps that have data
+                            // If it's something entirely else, show what we found
                             setHistory([...foundSteps]);
                         }
                     }
                     setResult(null);
                     setCurrentStepId('finish');
                     if (initialData.useReference) setUseReference(true);
+                    if (initialData.originalPrompt) {
+                        setCustomInstruction(prev => prev ? `${prev}\n\nReference Prompt: ${initialData.originalPrompt}` : `Reference Prompt: ${initialData.originalPrompt}`);
+                    }
                 } catch (error) {
                     console.error('Wizard analysis failed:', error);
-                    // Fallback to normal upload
                     setResult(null);
                     setCurrentStepId('finish');
                 } finally {
@@ -210,6 +218,7 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
             tags: allTags,
             useReference,
             customInstruction,
+            originalPrompt: initialData?.originalPrompt,
             safetyLevel,
             rawSelections: selections
         };

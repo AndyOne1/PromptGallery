@@ -50,8 +50,16 @@ export const analyzePrompt = async (apiKey, prompt) => {
     }
 };
 
-export const analyzeImageForWizard = async (apiKey, imageUrl, wizardSchema) => {
+export const analyzeTemplateForWizard = async (apiKey, templateData, wizardSchema) => {
+    const { imageUrl, prompt } = templateData;
+
     try {
+        const userContent = [];
+        if (prompt) userContent.push({ type: 'text', text: `Analyze this prompt: "${prompt}"` });
+        if (imageUrl) userContent.push({ type: 'image_url', image_url: { url: imageUrl } });
+
+        if (userContent.length === 0) throw new Error("No template data provided (no prompt or image)");
+
         const response = await axios.post(
             OPENROUTER_API_URL,
             {
@@ -59,28 +67,25 @@ export const analyzeImageForWizard = async (apiKey, imageUrl, wizardSchema) => {
                 messages: [
                     {
                         role: 'system',
-                        content: `You are a visual analysis expert. Your task is to map an image (via description or visual data) to a specific hierarchical wizard schema.
+                        content: `You are a visual analysis and prompt engineering expert. Your task is to map a provided image and/or prompt to a specific hierarchical wizard schema.
             
             WIZARD SCHEMA: ${JSON.stringify(wizardSchema)}
             
             Rules:
-            1. Analyze the image/description and map it to the PROVIDED wizard schema.
+            1. Analyze the provided template (image or prompt text) and map it to the PROVIDED wizard schema.
             2. For each step, you MUST choose the BEST matching "value" from the provided options. DO NOT invent new values.
             3. For multi_select steps, the result must be an object where keys are the specific "sections" names and values are arrays of selected "value" strings.
             4. If a step or option is not clearly applicable, skip it.
-            5. Return ONLY a JSON object in this format: 
+            5. COMPULSORY: You MUST identify the "identified_category". If it's even remotely photographic, use "amateur". 
+            6. Return ONLY a JSON object in this format: 
                { 
                  "selections": { "step_id": { "value": "val" }, "multi_step_id": { "Section Name": ["val1", "val2"] } }, 
                  "identified_category": "amateur" 
-               }
-            6. "identified_category" should be "amateur" if the image fits the Amateur Photography style.`
+               }`
                     },
                     {
                         role: 'user',
-                        content: [
-                            { type: 'text', text: 'Analyze this image and map it to the provided wizard schema.' },
-                            { type: 'image_url', image_url: { url: imageUrl } }
-                        ]
+                        content: userContent
                     }
                 ],
                 response_format: { type: 'json_object' }
@@ -98,7 +103,7 @@ export const analyzeImageForWizard = async (apiKey, imageUrl, wizardSchema) => {
         const content = response.data.choices[0].message.content;
         return typeof content === 'string' ? JSON.parse(content) : content;
     } catch (error) {
-        console.error('Analysis failed:', error);
+        console.error('Template analysis failed:', error);
         throw error;
     }
 };
@@ -143,6 +148,8 @@ export const generateFinalPrompt = async (apiKey, selections) => {
                         
                         ${selections.customInstruction ? `PRIORITY INSTRUCTION: Incorporate the following user preference above all else: "${selections.customInstruction}"` : ""}
                         
+                        ${selections.originalPrompt ? `REFERENCE TEMPLATE: The user is providing the following original prompt as a reference for the desired style, structure, and quality level: "${selections.originalPrompt}". Use this as a starting point but adapt it to the new selections and instructions.` : ""}
+
                         ${selections.useReference ? "CRITICAL: The user is providing a reference image. Your prompt MUST instruct the model to maintain the EXACT features, proportions, and likeness of the subject in the reference image. Do not describe new facial features or body types that would conflict with the reference." : ""}
 
                         SAFETY & CONTENT LEVEL:

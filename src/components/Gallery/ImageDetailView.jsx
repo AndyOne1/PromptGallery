@@ -87,13 +87,12 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
     };
 
     const handleCreateSimilar = () => {
-        // Pass industrial/clean tags to the generator
         navigate('/generator', {
             state: {
                 initialSelections: {
-                    category: image.tags[0] || '', // Usually first tag is category
-                    style: image.tags[1] || '',    // Second is style
-                    subject: image.description,
+                    imageUrl: image.url,
+                    originalPrompt: image.prompt,
+                    category: image.tags[0] || '',
                     tags: image.tags
                 }
             }
