@@ -12,6 +12,7 @@ export const galleryItems = pgTable('gallery_items', {
     id: serial('id').primaryKey(),
     userId: integer('user_id').references(() => users.id).notNull(),
     url: text('url').notNull(),
+    publicId: text('public_id'),
     prompt: text('prompt').notNull(),
     title: text('title'),
     description: text('description'),

@@ -103,6 +103,7 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete, initial
 
                 uploadResults.push({
                     url: cloudData.secure_url,
+                    publicId: cloudData.public_id,
                     prompt: prompt,
                     tags: finalTags,
                     title: finalTitle,

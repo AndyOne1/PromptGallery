@@ -2,6 +2,7 @@ import { getDb } from './db.js';
 import { galleryItems } from './schema.js';
 import { eq, and, or } from 'drizzle-orm';
 import { verifyToken, headers } from './utils.js';
+import axios from 'axios';
 
 export const handler = async (event) => {
     if (event.httpMethod === 'OPTIONS') {
@@ -50,6 +51,7 @@ export const handler = async (event) => {
                         const [newItem] = await db.insert(galleryItems).values({
                             userId: user.userId,
                             url: item.url,
+                            publicId: item.publicId,
                             prompt: item.prompt,
                             title: item.title,
                             description: item.description,
@@ -80,6 +82,7 @@ export const handler = async (event) => {
             const [newItem] = await db.insert(galleryItems).values({
                 userId: user.userId,
                 url: body.url,
+                publicId: body.publicId,
                 prompt: body.prompt,
                 title: body.title,
                 description: body.description,
@@ -108,6 +111,38 @@ export const handler = async (event) => {
 
             if (result.length === 0) {
                 return { statusCode: 404, headers, body: JSON.stringify({ error: 'Item not found or unauthorized' }) };
+            }
+
+            const deletedItem = result[0];
+
+            // Delete from Cloudinary if publicId exists
+            if (deletedItem.publicId) {
+                const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+                const apiKey = process.env.CLOUDINARY_API_KEY;
+                const apiSecret = process.env.CLOUDINARY_API_SECRET;
+
+                if (cloudName && apiKey && apiSecret) {
+                    try {
+                        const timestamp = Math.round((new Date()).getTime() / 1000);
+                        const signatureData = `public_id=${deletedItem.publicId}&timestamp=${timestamp}${apiSecret}`;
+                        const crypto = await import('crypto');
+                        const signature = crypto.createHash('sha1').update(signatureData).digest('hex');
+
+                        const formData = new URLSearchParams();
+                        formData.append('public_id', deletedItem.publicId);
+                        formData.append('timestamp', timestamp);
+                        formData.append('api_key', apiKey);
+                        formData.append('signature', signature);
+
+                        await axios.post(
+                            `https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`,
+                            formData.toString()
+                        );
+                    } catch (err) {
+                        console.error('Cloudinary Deletion Error:', err);
+                        // We don't fail the whole request if Cloudinary fails, but we log it
+                    }
+                }
             }
 
             return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
