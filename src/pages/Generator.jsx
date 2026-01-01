@@ -54,61 +54,58 @@ export default function Generator({ user }) {
             const updated = [newPrompt, ...saved];
             localStorage.setItem('generated_prompts', JSON.stringify(updated));
         }
-        const updated = [newPrompt, ...saved];
-        localStorage.setItem('generated_prompts', JSON.stringify(updated));
-    }
-    setMode('intro');
-    setInitialSelections(null);
-};
+        setMode('intro');
+        setInitialSelections(null);
+    };
 
-const renderContent = () => {
-    if (mode === 'wizard') {
+    const renderContent = () => {
+        if (mode === 'wizard') {
+            return (
+                <GeneratorWizard
+                    key={JSON.stringify(initialSelections || 'new-wizard')}
+                    onComplete={handleComplete}
+                    initialData={initialSelections}
+                />
+            );
+        }
+
+        if (mode === 'smart') {
+            return <SmartGenerator onComplete={handleComplete} />;
+        }
+
         return (
-            <GeneratorWizard
-                key={JSON.stringify(initialSelections || 'new-wizard')}
-                onComplete={handleComplete}
-                initialData={initialSelections}
-            />
+            <div className="wizard-intro glass">
+                <div className="wizard-icon-wrap">
+                    <Wand2 size={48} className="wizard-icon" />
+                </div>
+                <h2>Start Your Creation</h2>
+                <p>
+                    Choose how you want to create your masterpiece. Use our step-by-step wizard or tell the AI exactly what you want.
+                </p>
+                <div className="flex-row gap-4 mt-8 flex-wrap justify-center">
+                    <button className="btn-primary large" onClick={() => setMode('wizard')}>
+                        <Wand2 size={20} />
+                        Launch Setup Wizard
+                    </button>
+                    <button className="btn-secondary large" onClick={() => setMode('smart')}>
+                        <Sparkles size={20} className="text-accent" />
+                        Tell AI what you want
+                    </button>
+                </div>
+            </div>
         );
-    }
-
-    if (mode === 'smart') {
-        return <SmartGenerator onComplete={handleComplete} />;
-    }
+    };
 
     return (
-        <div className="wizard-intro glass">
-            <div className="wizard-icon-wrap">
-                <Wand2 size={48} className="wizard-icon" />
-            </div>
-            <h2>Start Your Creation</h2>
-            <p>
-                Choose how you want to create your masterpiece. Use our step-by-step wizard or tell the AI exactly what you want.
-            </p>
-            <div className="flex-row gap-4 mt-8 flex-wrap justify-center">
-                <button className="btn-primary large" onClick={() => setMode('wizard')}>
-                    <Wand2 size={20} />
-                    Launch Setup Wizard
-                </button>
-                <button className="btn-secondary large" onClick={() => setMode('smart')}>
-                    <Sparkles size={20} className="text-accent" />
-                    Tell AI what you want
-                </button>
-            </div>
+        <div className="page-container animate-fade-in">
+            <header className="page-header">
+                <div>
+                    <h1 className="title-gradient">Prompt Generator</h1>
+                    <p className="subtitle">Craft the perfect AI prompt with Grok's intelligence</p>
+                </div>
+            </header>
+
+            {renderContent()}
         </div>
     );
-};
-
-return (
-    <div className="page-container animate-fade-in">
-        <header className="page-header">
-            <div>
-                <h1 className="title-gradient">Prompt Generator</h1>
-                <p className="subtitle">Craft the perfect AI prompt with Grok's intelligence</p>
-            </div>
-        </header>
-
-        {renderContent()}
-    </div>
-);
 }
