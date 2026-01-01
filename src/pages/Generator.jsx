@@ -7,15 +7,15 @@ import { promptsApi } from '../services/api';
 
 export default function Generator({ user }) {
     const location = useLocation();
-    const [showWizard, setShowWizard] = useState(false);
-    const [initialSelections, setInitialSelections] = useState(null);
+    const [showWizard, setShowWizard] = useState(!!location.state?.initialSelections);
+    const [initialSelections, setInitialSelections] = useState(location.state?.initialSelections || null);
 
     useEffect(() => {
         if (location.state?.initialSelections) {
             setInitialSelections(location.state.initialSelections);
             setShowWizard(true);
         }
-    }, [location]);
+    }, [location.key]);
 
     const handleComplete = async (result) => {
         if (user) {

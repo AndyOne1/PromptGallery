@@ -6,7 +6,7 @@ import { ChevronDown, ChevronRight, ChevronLeft, Wand2, Check, RefreshCcw, Save,
 const GeneratorWizard = ({ onComplete, initialData }) => {
     const [currentStepId, setCurrentStepId] = useState(initialData ? 'finish' : 'root');
     const [history, setHistory] = useState(initialData ? [
-        'root', 'amateur_1_1', 'amateur_1_2', 'amateur_1_3', 'amateur_1_4',
+        'amateur_1_1', 'amateur_1_2', 'amateur_1_3', 'amateur_1_4',
         'amateur_1_5', 'amateur_1_6', 'amateur_1_7', 'amateur_1_8',
         'amateur_1_9', 'amateur_1_10', 'amateur_1_11', 'amateur_1_12',
         'amateur_1_13', 'amateur_1_14', 'amateur_1_15', 'amateur_1_16',
