@@ -1,5 +1,5 @@
 import { db } from './db';
-import { galleryItems } from '../../src/db/schema';
+import { galleryItems } from './schema';
 import { eq, and, or } from 'drizzle-orm';
 import { verifyToken, headers } from './utils';
 

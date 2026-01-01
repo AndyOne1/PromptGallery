@@ -1,5 +1,5 @@
 import { db } from './db';
-import { savedPrompts } from '../../src/db/schema';
+import { savedPrompts } from './schema';
 import { eq, and } from 'drizzle-orm';
 import { verifyToken, headers } from './utils';
 

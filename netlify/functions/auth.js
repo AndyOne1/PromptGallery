@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { db } from './db';
-import { users } from '../../src/db/schema';
+import { users } from './schema';
 import { eq } from 'drizzle-orm';
 
 const headers = {
