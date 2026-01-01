@@ -54,12 +54,13 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete, initial
 
         setIsUploading(true);
         try {
-            // 1. Analyze with OpenRouter (Only ONCE for the whole batch)
+            // 1. Analyze with OpenRouter
             setStatus('Analyzing with AI...');
-            let analysis = { tags: initialTags, description: '' };
-            if (initialTags.length === 0) {
-                analysis = await analyzePrompt(openRouterKey, prompt);
-            }
+            let analysis = await analyzePrompt(openRouterKey, prompt);
+
+            // If we have initial tags (from saved prompts), we prefer them but keep the AI's description
+            const finalTags = initialTags.length > 0 ? initialTags : analysis.tags;
+            const finalDescription = analysis.description;
 
             const uploadResults = [];
 
@@ -80,8 +81,8 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete, initial
                 uploadResults.push({
                     url: cloudData.secure_url,
                     prompt: prompt,
-                    tags: analysis.tags,
-                    description: analysis.description,
+                    tags: finalTags,
+                    description: finalDescription,
                     isPublic: isPublic
                 });
             }

@@ -82,7 +82,10 @@ export const generateFinalPrompt = async (apiKey, selections) => {
                         - If selections.useReference is true: "Maintain EXACT features, proportions, and identity from reference. No alterations to bone structure or hairstyle."
                         
                         Return a JSON object with: 
-                        { "prompt": "The detailed natural language prompt", "refined_tags": ["list", "of", "important", "tags"] }`
+                        { 
+                          "prompt": "The detailed natural language prompt", 
+                          "refined_tags": ["Strictly 6-8 tags total. Use broad categories: Category, Style, Subject, Environment. No micro-tags or redundant details."] 
+                        }`
                     },
                     {
                         role: 'user',
