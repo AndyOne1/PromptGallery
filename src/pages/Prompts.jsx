@@ -6,9 +6,10 @@ import PromptDetailView from '../components/Prompts/PromptDetailView';
 import './Prompts.css';
 import '../components/Prompts/PromptDetailView.css';
 
+import { useData } from '../context/DataContext';
+
 export default function Prompts({ user }) {
-    const [prompts, setPrompts] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const { prompts, isLoadingPrompts, fetchPrompts, removePromptFromCache } = useData();
     const [copiedId, setCopiedId] = useState(null);
     const [isUploadOpen, setIsUploadOpen] = useState(false);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -17,40 +18,8 @@ export default function Prompts({ user }) {
     const [displayLimit, setDisplayLimit] = useState(10);
 
     useEffect(() => {
-        loadPrompts();
-    }, [user]);
-
-    useEffect(() => {
-        if (isUploadOpen || isDetailOpen) {
-            document.body.classList.add('modal-open');
-        } else {
-            document.body.classList.remove('modal-open');
-        }
-        return () => document.body.classList.remove('modal-open');
-    }, [isUploadOpen, isDetailOpen]);
-
-    const loadPrompts = async () => {
-        setLoading(true);
-        try {
-            let data;
-            if (user) {
-                data = await promptsApi.get();
-            } else {
-                data = JSON.parse(localStorage.getItem('generated_prompts') || '[]');
-            }
-
-            // Sort by newest first
-            const sorted = (data || []).sort((a, b) =>
-                new Date(b.createdAt) - new Date(a.createdAt)
-            );
-
-            setPrompts(sorted);
-        } catch (err) {
-            console.error('Failed to load prompts:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
+        fetchPrompts();
+    }, [user, fetchPrompts]);
 
     const copyPrompt = (text, id) => {
         navigator.clipboard.writeText(text);
@@ -63,14 +32,14 @@ export default function Prompts({ user }) {
         if (user) {
             try {
                 await promptsApi.delete(id);
-                setPrompts(prompts.filter(p => p.id !== id));
+                removePromptFromCache(id);
             } catch (err) {
                 alert('Failed to delete prompt');
             }
         } else {
             const updated = prompts.filter(p => p.id !== id);
-            setPrompts(updated);
             localStorage.setItem('generated_prompts', JSON.stringify(updated));
+            removePromptFromCache(id);
         }
     };
 
@@ -93,18 +62,22 @@ export default function Prompts({ user }) {
         };
     };
 
+    const sortedPrompts = useMemo(() => {
+        return [...prompts].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }, [prompts]);
+
     const filteredPrompts = useMemo(() => {
-        let result = prompts;
+        let result = sortedPrompts;
         if (searchQuery.trim()) {
             const query = searchQuery.toLowerCase();
-            result = prompts.filter(p => {
+            result = sortedPrompts.filter(p => {
                 const content = (p.content || p.prompt || '').toLowerCase();
                 const tags = (p.refinedTags || p.tags || []).join(' ').toLowerCase();
                 return content.includes(query) || tags.includes(query);
             });
         }
         return result;
-    }, [prompts, searchQuery]);
+    }, [sortedPrompts, searchQuery]);
 
     const displayPrompts = useMemo(() => {
         return filteredPrompts.slice(0, displayLimit);

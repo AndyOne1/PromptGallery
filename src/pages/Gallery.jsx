@@ -8,55 +8,46 @@ import '../components/Gallery/Gallery.css';
 import '../components/Gallery/DetailView.css';
 import { galleryApi } from '../services/api';
 
+import { useData } from '../context/DataContext';
+
 export default function Gallery({ user }) {
+    const {
+        privateImages,
+        publicImages,
+        isLoadingImages,
+        fetchImages,
+        addImage,
+        updateImageInCache,
+        removeImageFromCache
+    } = useData();
+
     const [isUploadOpen, setIsUploadOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
-    const [images, setImages] = useState([]);
     const [view, setView] = useState('private'); // 'private' or 'public'
-    const [loading, setLoading] = useState(false);
     const [search, setSearch] = useState('');
     const [copiedId, setCopiedId] = useState(null);
 
     useEffect(() => {
-        loadImages();
-    }, [view, user]);
+        fetchImages(view);
+    }, [view, user, fetchImages]);
 
-    const loadImages = async () => {
-        setLoading(true);
-        try {
-            let data;
-            if (view === 'public') {
-                data = await galleryApi.getPublic();
-            } else if (user) {
-                data = await galleryApi.getPrivate();
-            } else {
-                data = [];
-            }
-            setImages(data || []);
-        } catch (err) {
-            console.error('Failed to load images:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
+    const images = view === 'public' ? publicImages : privateImages;
 
     const handleUploadComplete = (newImage) => {
-        setImages([newImage, ...images]);
+        addImage(newImage);
     };
 
     const deleteTag = async (imageId, tagToDelete) => {
-        // Since tags are JSONB, we'd ideally update them on server
-        // For simplicity now, let's keep the filter logic but noted for future DB update
         const img = images.find(i => i.id === imageId);
         if (!img) return;
 
         const updatedTags = img.tags.filter(t => t !== tagToDelete);
-        // TODO: call galleryApi.update(imageId, { tags: updatedTags })
-        setImages(images.map(i => i.id === imageId ? { ...i, tags: updatedTags } : i));
+        const updatedImg = { ...img, tags: updatedTags };
+        updateImageInCache(updatedImg);
 
         if (selectedImage?.id === imageId) {
-            setSelectedImage({ ...selectedImage, tags: updatedTags });
+            setSelectedImage(updatedImg);
         }
     };
 
@@ -120,7 +111,7 @@ export default function Gallery({ user }) {
                 </div>
             </div>
 
-            {loading ? (
+            {isLoadingImages ? (
                 <div className="loading-state glass">
                     <Loader2 size={48} className="spin" />
                     <p>Loading your creations...</p>
@@ -177,10 +168,10 @@ export default function Gallery({ user }) {
                 user={user}
                 onUpdateImage={(updated, deletedId) => {
                     if (deletedId) {
-                        setImages(images.filter(img => img.id !== deletedId));
+                        removeImageFromCache(deletedId);
                         setSelectedImage(null);
                     } else if (updated) {
-                        setImages(images.map(img => img.id === updated.id ? updated : img));
+                        updateImageInCache(updated);
                         setSelectedImage(updated);
                     }
                 }}
