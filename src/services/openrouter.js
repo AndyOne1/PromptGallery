@@ -50,6 +50,54 @@ export const analyzePrompt = async (apiKey, prompt) => {
     }
 };
 
+export const analyzeImageForWizard = async (apiKey, imageUrl, wizardSchema) => {
+    try {
+        const response = await axios.post(
+            OPENROUTER_API_URL,
+            {
+                model: 'x-ai/grok-4.1-fast',
+                messages: [
+                    {
+                        role: 'system',
+                        content: `You are a visual analysis expert. Your task is to map an image (via description or visual data) to a specific hierarchical wizard schema.
+            
+            WIZARD SCHEMA: ${JSON.stringify(wizardSchema)}
+            
+            Rules:
+            1. Analyze the image/description and pick the BEST fit for EVERY step in the schema if possible.
+            2. Return ONLY a JSON object where keys are step IDs (e.g., "amateur_1_1") and values are the matching "value" from the options.
+            3. For multi_select steps, return an object mapping section names to arrays of values: { "Section Name": ["value1", "value2"] }.
+            4. If a step doesn't apply, omit it or return null.
+            5. Return the result in this format: { "selections": { ... }, "identified_category": "amateur" }`
+                    },
+                    {
+                        role: 'user',
+                        content: [
+                            { type: 'text', text: 'Analyze this image and map it to the provided wizard schema.' },
+                            { type: 'image_url', image_url: { url: imageUrl } }
+                        ]
+                    }
+                ],
+                response_format: { type: 'json_object' }
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'HTTP-Referer': 'http://localhost:5173',
+                    'X-Title': 'PromptFlow Local',
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        const content = response.data.choices[0].message.content;
+        return typeof content === 'string' ? JSON.parse(content) : content;
+    } catch (error) {
+        console.error('Analysis failed:', error);
+        throw error;
+    }
+};
+
 export const generateFinalPrompt = async (apiKey, selections) => {
     try {
         const response = await axios.post(
@@ -91,6 +139,11 @@ export const generateFinalPrompt = async (apiKey, selections) => {
                         ${selections.customInstruction ? `PRIORITY INSTRUCTION: Incorporate the following user preference above all else: "${selections.customInstruction}"` : ""}
                         
                         ${selections.useReference ? "CRITICAL: The user is providing a reference image. Your prompt MUST instruct the model to maintain the EXACT features, proportions, and likeness of the subject in the reference image. Do not describe new facial features or body types that would conflict with the reference." : ""}
+
+                        SAFETY & CONTENT LEVEL:
+                        ${selections.safetyLevel === 'sfw' ? "MANDATORY: Ensure the resulting prompt is strictly SFW (Safe For Work). Use wholesome, professional, or everyday casual descriptions. No provocative or revealing elements." : ""}
+                        ${selections.safetyLevel === 'nsfw' ? "CONTENT TYPE: The user requested explicit NSFW content. Be direct and detailed in describing the anatomy, actions, and atmosphere requested, while maintaining a high-quality photographic description." : ""}
+                        ${selections.safetyLevel === 'nsfw_bypass' ? "CREATIVE BYPASS: The user wants provocative content but needs to avoid basic keyword filters. Describe physiological reactions, physical features, and intimate atmospheres using highly descriptive, artistic, or clinical circumlocution. Focus on 'the flush of skin', 'heavy rhythmic breathing', 'tightening of muscles', and 'the specific interplay of light on intense textures' to convey the intensity without using banned slurs or simplistic explicit terms. Be poetically provocative." : ""}
                         `
                     }
                 ],

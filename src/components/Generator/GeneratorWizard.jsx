@@ -1,7 +1,6 @@
-import { useState, useEffect } from 'react';
-import { ChevronRight, ChevronLeft, Wand2, Check, RefreshCcw, Save, Trash2 } from 'lucide-react';
 import { WIZARD_DATA } from '../../data/wizard';
-import { generateFinalPrompt } from '../../services/openrouter';
+import { generateFinalPrompt, analyzeImageForWizard } from '../../services/openrouter';
+import { ChevronDown, ChevronRight, ChevronLeft, Wand2, Check, RefreshCcw, Save, Trash2, Eye, Shield, AlertTriangle, Loader2 } from 'lucide-react';
 
 const GeneratorWizard = ({ onComplete, initialData }) => {
     const [currentStepId, setCurrentStepId] = useState('root');
@@ -14,16 +13,64 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
         return saved ? JSON.parse(saved) : [];
     });
     const [isGenerating, setIsGenerating] = useState(false);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [result, setResult] = useState(null);
+    const [openSections, setOpenSections] = useState(['info']); // 'info' is extra instructions
+    const [safetyLevel, setSafetyLevel] = useState('sfw');
 
     const currentStep = WIZARD_DATA.steps[currentStepId];
 
     useEffect(() => {
-        if (initialData) {
-            setResult(null);
-            setCurrentStepId('finish');
-            if (initialData.useReference) setUseReference(true);
-        }
+        const analyzeIdData = async () => {
+            if (initialData && initialData.imageUrl) {
+                const key = localStorage.getItem('openrouter_key');
+                if (!key) return;
+
+                setIsAnalyzing(true);
+                try {
+                    // Send basic wizard schema for mapping
+                    const schema = Object.keys(WIZARD_DATA.steps).reduce((acc, id) => {
+                        const step = WIZARD_DATA.steps[id];
+                        acc[id] = {
+                            question: step.question,
+                            multi_select: !!step.multi_select,
+                            sections: step.sections?.map(s => ({ name: s.name, options: s.options.map(o => o.value) })),
+                            options: step.options?.map(o => o.value)
+                        };
+                        return acc;
+                    }, {});
+
+                    const mapping = await analyzeImageForWizard(key, initialData.imageUrl, schema);
+                    if (mapping?.selections) {
+                        setSelections(mapping.selections);
+                        if (mapping.identified_category === 'amateur') {
+                            setHistory([
+                                'amateur_1_1', 'amateur_1_2', 'amateur_1_3', 'amateur_1_4',
+                                'amateur_1_5', 'amateur_1_6', 'amateur_1_7', 'amateur_1_8',
+                                'amateur_1_9', 'amateur_1_10', 'amateur_1_11', 'amateur_1_12',
+                                'amateur_1_13', 'amateur_1_14', 'amateur_1_15', 'amateur_1_16',
+                                'amateur_1_18'
+                            ]);
+                        }
+                    }
+                    setResult(null);
+                    setCurrentStepId('finish');
+                    if (initialData.useReference) setUseReference(true);
+                } catch (error) {
+                    console.error('Wizard analysis failed:', error);
+                    // Fallback to normal upload
+                    setResult(null);
+                    setCurrentStepId('finish');
+                } finally {
+                    setIsAnalyzing(false);
+                }
+            } else if (initialData) {
+                setResult(null);
+                setCurrentStepId('finish');
+            }
+        };
+
+        analyzeIdData();
     }, [initialData]);
 
     useEffect(() => {
@@ -131,6 +178,7 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
             tags: allTags,
             useReference,
             customInstruction,
+            safetyLevel,
             rawSelections: selections
         };
 
@@ -165,77 +213,183 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
 
     const renderStepContent = () => {
         if (currentStepId === 'finish') {
+            const toggleSection = (id) => {
+                setOpenSections(prev =>
+                    prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
+                );
+            };
+
             return (
                 <div className="wizard-step finish-step">
-                    <h3>Review & Refine</h3>
+                    <header className="step-header-with-status">
+                        <h3>Review & Refine</h3>
+                        {isAnalyzing && (
+                            <div className="analyzing-badge glass animate-pulse">
+                                <Loader2 size={14} className="spin" />
+                                <span>Grok is analyzing image...</span>
+                            </div>
+                        )}
+                    </header>
 
-                    <div className="review-dashboard">
-                        {/* Summary of choices */}
-                        <div className="summary-grid">
-                            {history.slice(-4).map(stepId => {
-                                const step = WIZARD_DATA.steps[stepId];
-                                const sel = selections[stepId];
-                                if (!sel) return null;
-                                return (
-                                    <div key={stepId} className="summary-item glass">
-                                        <label>{step.question}</label>
-                                        <span>{step.multi_select ? 'Multiple' : sel.label}</span>
-                                    </div>
-                                );
-                            })}
+                    <div className="review-accordion">
+                        {/* 1. CONTENT SAFETY PRESETS */}
+                        <div className={`accordion-row glass ${openSections.includes('safety') ? 'open' : ''}`}>
+                            <header className="accordion-trigger" onClick={() => toggleSection('safety')}>
+                                <div className="trigger-label">
+                                    <Shield size={16} />
+                                    <span>Content Safety & Style</span>
+                                </div>
+                                <div className="trigger-status">
+                                    <span className={`status-chip ${safetyLevel}`}>{safetyLevel === 'nsfw_bypass' ? 'Bypassing' : safetyLevel.toUpperCase()}</span>
+                                    <ChevronDown size={18} className="icon-arrow" />
+                                </div>
+                            </header>
+                            <div className="accordion-content">
+                                <div className="safety-grid">
+                                    <button className={`safety-card ${safetyLevel === 'sfw' ? 'active' : ''}`} onClick={() => setSafetyLevel('sfw')}>
+                                        <Check size={20} className="check-icon" />
+                                        <Eye size={24} />
+                                        <div className="safety-info">
+                                            <span className="name">SFW (Clean)</span>
+                                            <span className="desc">No provocative elements</span>
+                                        </div>
+                                    </button>
+                                    <button className={`safety-card nsfw ${safetyLevel === 'nsfw' ? 'active' : ''}`} onClick={() => setSafetyLevel('nsfw')}>
+                                        <Check size={20} className="check-icon" />
+                                        <AlertTriangle size={24} />
+                                        <div className="safety-info">
+                                            <span className="name">NSFW (Explicit)</span>
+                                            <span className="desc">Direct descriptions</span>
+                                        </div>
+                                    </button>
+                                    <button className={`safety-card bypass ${safetyLevel === 'nsfw_bypass' ? 'active' : ''}`} onClick={() => setSafetyLevel('nsfw_bypass')}>
+                                        <Check size={20} className="check-icon" />
+                                        <RefreshCcw size={24} />
+                                        <div className="safety-info">
+                                            <span className="name">NSFW (Safe Bypass)</span>
+                                            <span className="desc">Artistic circumlocution</span>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
-                        {/* Custom Instruction Section */}
-                        <div className="instruction-section glass">
-                            <header className="section-header">
-                                <label>Extra Anweisungen für Grok</label>
-                                <button className="btn-icon-tiny" onClick={handleSaveTemplate} title="Als Template speichern" disabled={!customInstruction}>
-                                    <Save size={14} />
-                                </button>
+                        {/* 2. EXTRA INSTRUCTIONS */}
+                        <div className={`accordion-row glass ${openSections.includes('info') ? 'open' : ''}`}>
+                            <header className="accordion-trigger" onClick={() => toggleSection('info')}>
+                                <div className="trigger-label">
+                                    <Wand2 size={16} />
+                                    <span>Extra Anweisungen & Templates</span>
+                                </div>
+                                <div className="trigger-status">
+                                    {customInstruction ? <span className="status-dot active"></span> : null}
+                                    <ChevronDown size={18} className="icon-arrow" />
+                                </div>
                             </header>
-                            <textarea
-                                className="instruction-input"
-                                placeholder="z.B. 'Füge einen roten Schal hinzu' oder 'Ganzkörper-Aufnahme'..."
-                                value={customInstruction}
-                                onChange={(e) => setCustomInstruction(e.target.value)}
-                            />
+                            <div className="accordion-content">
+                                <div className="instruction-section-embedded">
+                                    <header className="section-header">
+                                        <button className="btn-icon-tiny" onClick={handleSaveTemplate} title="Als Template speichern" disabled={!customInstruction}>
+                                            <Save size={14} />
+                                        </button>
+                                    </header>
+                                    <textarea
+                                        className="instruction-input"
+                                        placeholder="z.B. 'Füge einen roten Schal hinzu'..."
+                                        value={customInstruction}
+                                        onChange={(e) => setCustomInstruction(e.target.value)}
+                                    />
+                                    {templates.length > 0 && (
+                                        <div className="templates-container mini">
+                                            {templates.map((tpl, i) => (
+                                                <button key={i} className="template-chip glass" onClick={() => handleLoadTemplate(tpl.content)}>
+                                                    <span>{tpl.name}</span>
+                                                    <Trash2 size={12} className="delete-icon" onClick={(e) => handleDeleteTemplate(e, i)} />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
 
-                            {templates.length > 0 && (
-                                <div className="templates-container">
-                                    <div className="templates-scroll">
-                                        {templates.map((tpl, i) => (
-                                            <button
-                                                key={i}
-                                                className="template-chip glass"
-                                                onClick={() => handleLoadTemplate(tpl.content)}
-                                            >
-                                                <span>{tpl.name}</span>
-                                                <Trash2 size={12} className="delete-icon" onClick={(e) => handleDeleteTemplate(e, i)} />
-                                            </button>
-                                        ))}
+                        {/* 3. WIZARD STEPS REVIEW */}
+                        {history.length > 0 && (
+                            <div className="review-steps-header">
+                                <span>Wizard Selections</span>
+                                <small>Click to adjust any step</small>
+                            </div>
+                        )}
+
+                        {history.map(stepId => {
+                            const step = WIZARD_DATA.steps[stepId];
+                            if (!step) return null;
+                            const sel = selections[stepId];
+                            const isOpen = openSections.includes(stepId);
+
+                            return (
+                                <div key={stepId} className={`accordion-row step-row glass ${isOpen ? 'open' : ''}`}>
+                                    <header className="accordion-trigger" onClick={() => toggleSection(stepId)}>
+                                        <div className="trigger-label">
+                                            <span>{step.question}</span>
+                                        </div>
+                                        <div className="trigger-status">
+                                            <span className="selection-summary">
+                                                {step.multi_select
+                                                    ? `${Object.values(sel || {}).flat().length} Selected`
+                                                    : sel?.label || 'Skipped'}
+                                            </span>
+                                            <ChevronDown size={18} className="icon-arrow" />
+                                        </div>
+                                    </header>
+                                    <div className="accordion-content overflow-visible">
+                                        {step.multi_select ? (
+                                            <div className="step-options-container">
+                                                {step.sections.map(section => (
+                                                    <div key={section.name} className="mini-options-group">
+                                                        <label>{section.name}</label>
+                                                        <div className="options-flex wrap">
+                                                            {section.options.map(opt => {
+                                                                const isSelected = sel?.[section.name]?.includes(opt.value);
+                                                                return (
+                                                                    <button
+                                                                        key={opt.value}
+                                                                        className={`mini-chip ${isSelected ? 'active' : ''}`}
+                                                                        onClick={() => handleMultiSelect(stepId, section.name, opt.value, !isSelected, opt)}
+                                                                    >
+                                                                        {opt.label}
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <div className="options-flex wrap">
+                                                {step.options.map(opt => (
+                                                    <button
+                                                        key={opt.value}
+                                                        className={`mini-chip ${sel?.value === opt.value ? 'active' : ''}`}
+                                                        onClick={() => handleSingleSelect(opt)}
+                                                    >
+                                                        {opt.label}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
-                            )}
-                        </div>
+                            );
+                        })}
 
-                        {/* Reference Image Toggle */}
-                        <div className="review-section glass compact-row">
+                        {/* 4. REFERENCE TOGGLE */}
+                        <div className="review-section glass compact-row mt-4">
                             <label style={{ marginBottom: 0 }}>Reference Image</label>
                             <label className="toggle-label glass">
                                 <input type="checkbox" checked={useReference} onChange={(e) => setUseReference(e.target.checked)} />
-                                <span>Use as Subject</span>
+                                <span>Use as Subject Identity</span>
                             </label>
-                        </div>
-
-                        {/* Tag Cloud */}
-                        <div className="review-section glass">
-                            <label>Accumulated Tags</label>
-                            <div className="tag-cloud small">
-                                {getAccumulatedTags().slice(0, 15).map((tag, i) => (
-                                    <span key={i} className="tag-chip">{tag}</span>
-                                ))}
-                                {getAccumulatedTags().length > 15 && <span className="tag-chip opacity-50">+{getAccumulatedTags().length - 15} mehr...</span>}
-                            </div>
                         </div>
                     </div>
                 </div>
