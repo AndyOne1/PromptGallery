@@ -4,8 +4,14 @@ import { generateFinalPrompt, analyzeTemplateForWizard } from '../../services/op
 import { ChevronDown, ChevronRight, ChevronLeft, Wand2, Check, RefreshCcw, Save, Trash2, Eye, Shield, AlertTriangle, Loader2 } from 'lucide-react';
 
 const GeneratorWizard = ({ onComplete, initialData }) => {
-    const [currentStepId, setCurrentStepId] = useState('root');
-    const [history, setHistory] = useState([]);
+    const [currentStepId, setCurrentStepId] = useState(initialData ? 'finish' : 'root');
+    const [history, setHistory] = useState(initialData ? [
+        'amateur_1_1', 'amateur_1_2', 'amateur_1_3', 'amateur_1_4',
+        'amateur_1_5', 'amateur_1_6', 'amateur_1_7', 'amateur_1_8',
+        'amateur_1_9', 'amateur_1_10', 'amateur_1_11', 'amateur_1_12',
+        'amateur_1_13', 'amateur_1_14', 'amateur_1_15', 'amateur_1_16',
+        'amateur_1_18'
+    ] : []);
     const [selections, setSelections] = useState({}); // { stepId: value(s) }
     const [useReference, setUseReference] = useState(false);
     const [customInstruction, setCustomInstruction] = useState('');
@@ -24,6 +30,9 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
     useEffect(() => {
         const analyzeIdData = async () => {
             if (initialData && (initialData.imageUrl || initialData.originalPrompt)) {
+                setResult(null);
+                setCurrentStepId('finish');
+
                 const key = localStorage.getItem('openrouter_key');
                 if (!key) return;
 
@@ -98,8 +107,6 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
                     setOpenSections(['safety', 'amateur_1_1']);
                 } catch (error) {
                     console.error('Wizard analysis failed:', error);
-                    setResult(null);
-                    setCurrentStepId('finish');
                 } finally {
                     setIsAnalyzing(false);
                 }
