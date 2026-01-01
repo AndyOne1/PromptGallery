@@ -1,6 +1,6 @@
 import { getDb } from './db.js';
 import { galleryItems } from './schema.js';
-import { eq, and, or } from 'drizzle-orm';
+import { eq, and, or, inArray } from 'drizzle-orm';
 import { verifyToken, headers } from './utils.js';
 import axios from 'axios';
 
@@ -100,52 +100,60 @@ export const handler = async (event) => {
             const { id } = event.queryStringParameters || {};
             if (!id) return { statusCode: 400, headers, body: JSON.stringify({ error: 'ID required' }) };
 
-            // Ensure ownership
-            const result = await db.delete(galleryItems)
-                .where(
-                    and(
-                        eq(galleryItems.id, parseInt(id)),
-                        eq(galleryItems.userId, user.userId)
-                    )
-                ).returning();
+            const ids = id.split(',').map(i => parseInt(i)).filter(Boolean);
+            if (ids.length === 0) return { statusCode: 400, headers, body: JSON.stringify({ error: 'Valid IDs required' }) };
 
-            if (result.length === 0) {
-                return { statusCode: 404, headers, body: JSON.stringify({ error: 'Item not found or unauthorized' }) };
+            // Fetch items first to get publicIds for Cloudinary
+            const itemsToDelete = await db.select().from(galleryItems)
+                .where(and(
+                    inArray(galleryItems.id, ids),
+                    eq(galleryItems.userId, user.userId)
+                ));
+
+            if (itemsToDelete.length === 0) {
+                return { statusCode: 404, headers, body: JSON.stringify({ error: 'Items not found or unauthorized' }) };
             }
 
-            const deletedItem = result[0];
+            // Perform DB deletion
+            await db.delete(galleryItems)
+                .where(and(
+                    inArray(galleryItems.id, ids),
+                    eq(galleryItems.userId, user.userId)
+                ));
 
-            // Delete from Cloudinary if publicId exists
-            if (deletedItem.publicId) {
-                const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
-                const apiKey = process.env.CLOUDINARY_API_KEY;
-                const apiSecret = process.env.CLOUDINARY_API_SECRET;
+            // Cloudinary Cleanup Loop
+            const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+            const apiKey = process.env.CLOUDINARY_API_KEY;
+            const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
-                if (cloudName && apiKey && apiSecret) {
-                    try {
-                        const timestamp = Math.round((new Date()).getTime() / 1000);
-                        const signatureData = `public_id=${deletedItem.publicId}&timestamp=${timestamp}${apiSecret}`;
-                        const crypto = await import('crypto');
-                        const signature = crypto.createHash('sha1').update(signatureData).digest('hex');
+            if (cloudName && apiKey && apiSecret) {
+                const crypto = await import('crypto');
 
-                        const formData = new URLSearchParams();
-                        formData.append('public_id', deletedItem.publicId);
-                        formData.append('timestamp', timestamp);
-                        formData.append('api_key', apiKey);
-                        formData.append('signature', signature);
+                for (const item of itemsToDelete) {
+                    if (item.publicId) {
+                        try {
+                            const timestamp = Math.round((new Date()).getTime() / 1000);
+                            const signatureData = `public_id=${item.publicId}&timestamp=${timestamp}${apiSecret}`;
+                            const signature = crypto.createHash('sha1').update(signatureData).digest('hex');
 
-                        await axios.post(
-                            `https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`,
-                            formData.toString()
-                        );
-                    } catch (err) {
-                        console.error('Cloudinary Deletion Error:', err);
-                        // We don't fail the whole request if Cloudinary fails, but we log it
+                            const formData = new URLSearchParams();
+                            formData.append('public_id', item.publicId);
+                            formData.append('timestamp', timestamp);
+                            formData.append('api_key', apiKey);
+                            formData.append('signature', signature);
+
+                            await axios.post(
+                                `https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`,
+                                formData.toString()
+                            );
+                        } catch (err) {
+                            console.error(`Cloudinary Deletion Error for ${item.publicId}:`, err);
+                        }
                     }
                 }
             }
 
-            return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+            return { statusCode: 200, headers, body: JSON.stringify({ success: true, count: itemsToDelete.length }) };
         }
 
         // PATCH: Toggle public

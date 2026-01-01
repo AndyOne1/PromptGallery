@@ -261,3 +261,72 @@
 .dropzone.compact p {
     font-size: 0.875rem;
 }
+
+/* Batch Deletion & Selection Mode */
+.gallery-card.selected {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 2px var(--accent-primary);
+}
+
+.selection-overlay {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 10;
+}
+
+.selection-checkbox {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: transparent;
+    transition: all var(--transition-fast);
+    cursor: pointer;
+}
+
+.gallery-card.selected .selection-checkbox {
+    background: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: white;
+}
+
+.batch-actions-bar {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    padding: 0.75rem 1.5rem;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(20, 20, 25, 0.9);
+    backdrop-filter: blur(12px);
+}
+
+.batch-info {
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.batch-btns {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.gallery-card.selection-active {
+    cursor: pointer;
+}
+
+.gallery-card.selection-active .card-overlay {
+    pointer-events: none;
+    /* Let clicks pass to the card for selection */
+}

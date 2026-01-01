@@ -32,8 +32,9 @@ export const galleryApi = {
         const response = await axios.post(`${API_BASE}/gallery`, data, { headers: getAuthHeaders() });
         return response.data;
     },
-    delete: async (id) => {
-        const response = await axios.delete(`${API_BASE}/gallery?id=${id}`, { headers: getAuthHeaders() });
+    delete: async (ids) => {
+        const idParam = Array.isArray(ids) ? ids.join(',') : ids;
+        const response = await axios.delete(`${API_BASE}/gallery?id=${idParam}`, { headers: getAuthHeaders() });
         return response.data;
     },
     togglePublic: async (id, isPublic) => {

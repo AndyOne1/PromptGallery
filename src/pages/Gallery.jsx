@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { Upload, Search, Settings as SettingsIcon, Copy, Check, Shield, Globe, Loader2 } from 'lucide-react';
+import { Upload, Search, Settings as SettingsIcon, Copy, Check, Shield, Globe, Loader2, ListChecks, Trash2, X } from 'lucide-react';
 import UploadModal from '../components/Gallery/UploadModal';
 import ImageDetailView from '../components/Gallery/ImageDetailView';
 import Settings from '../components/Settings';
@@ -27,6 +26,8 @@ export default function Gallery({ user }) {
     const [view, setView] = useState('private'); // 'private' or 'public'
     const [search, setSearch] = useState('');
     const [copiedId, setCopiedId] = useState(null);
+    const [isSelectionMode, setIsSelectionMode] = useState(false);
+    const [selectedIds, setSelectedIds] = useState([]);
 
     useEffect(() => {
         fetchImages(view);
@@ -58,6 +59,40 @@ export default function Gallery({ user }) {
         setTimeout(() => setCopiedId(null), 2000);
     };
 
+    const toggleSelectMode = () => {
+        setIsSelectionMode(!isSelectionMode);
+        setSelectedIds([]);
+    };
+
+    const toggleImageSelection = (id) => {
+        setSelectedIds(prev =>
+            prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]
+        );
+    };
+
+    const handleBatchDelete = async () => {
+        if (!selectedIds.length) return;
+        if (!window.confirm(`Are you sure you want to delete ${selectedIds.length} images? This will also remove them from Cloudinary.`)) return;
+
+        try {
+            await galleryApi.delete(selectedIds);
+            selectedIds.forEach(id => removeImageFromCache(id));
+            setIsSelectionMode(false);
+            setSelectedIds([]);
+        } catch (err) {
+            console.error('Batch deletion failed:', err);
+            alert('Failed to delete some images.');
+        }
+    };
+
+    const handleCardClick = (img) => {
+        if (isSelectionMode) {
+            toggleImageSelection(img.id);
+        } else {
+            setSelectedImage(img);
+        }
+    };
+
     const filteredImages = images.filter(img =>
         img.prompt.toLowerCase().includes(search.toLowerCase()) ||
         img.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()))
@@ -71,6 +106,9 @@ export default function Gallery({ user }) {
                     <p className="subtitle">Curate and analyze your high-quality creations</p>
                 </div>
                 <div className="header-actions">
+                    <button className={`btn-icon large ${isSelectionMode ? 'active' : ''}`} onClick={toggleSelectMode} title="Batch Selection">
+                        <ListChecks size={22} />
+                    </button>
                     <button className="btn-icon large" onClick={() => setIsSettingsOpen(true)}>
                         <SettingsIcon size={22} />
                     </button>
@@ -118,29 +156,43 @@ export default function Gallery({ user }) {
                 </div>
             ) : filteredImages.length > 0 ? (
                 <div className="gallery-grid">
-                    {filteredImages.map(img => (
-                        <div key={img.id} className="gallery-card glass glass-interactive" onClick={() => setSelectedImage(img)}>
-                            <div className="card-image-wrap">
-                                <img src={img.url} alt={img.description} />
-                                <div className="card-overlay">
-                                    <button className="btn-copy" onClick={(e) => copyPrompt(e, img.prompt, img.id)}>
-                                        {copiedId === img.id ? <Check size={16} /> : <Copy size={16} />}
-                                    </button>
+                    {filteredImages.map(img => {
+                        const isSelected = selectedIds.includes(img.id);
+                        return (
+                            <div
+                                key={img.id}
+                                className={`gallery-card glass glass-interactive ${isSelectionMode ? 'selection-active' : ''} ${isSelected ? 'selected' : ''}`}
+                                onClick={() => handleCardClick(img)}
+                            >
+                                <div className="card-image-wrap">
+                                    {isSelectionMode && (
+                                        <div className="selection-overlay">
+                                            <div className="selection-checkbox">
+                                                <Check size={16} />
+                                            </div>
+                                        </div>
+                                    )}
+                                    <img src={img.url} alt={img.description} />
+                                    <div className="card-overlay">
+                                        <button className="btn-copy" onClick={(e) => copyPrompt(e, img.prompt, img.id)}>
+                                            {copiedId === img.id ? <Check size={16} /> : <Copy size={16} />}
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="card-content">
+                                    <div className="card-tags">
+                                        {img.tags.slice(0, 3).map(tag => (
+                                            <span key={tag} className="tag">{tag}</span>
+                                        ))}
+                                        {img.tags.length > 3 && <span className="tag-more">+{img.tags.length - 3}</span>}
+                                    </div>
+                                    <h4 className="card-title">{img.title || img.description}</h4>
+                                    {img.title && <p className="card-desc-small">{img.description}</p>}
+                                    <p className="card-prompt">{img.prompt}</p>
                                 </div>
                             </div>
-                            <div className="card-content">
-                                <div className="card-tags">
-                                    {img.tags.slice(0, 3).map(tag => (
-                                        <span key={tag} className="tag">{tag}</span>
-                                    ))}
-                                    {img.tags.length > 3 && <span className="tag-more">+{img.tags.length - 3}</span>}
-                                </div>
-                                <h4 className="card-title">{img.title || img.description}</h4>
-                                {img.title && <p className="card-desc-small">{img.description}</p>}
-                                <p className="card-prompt">{img.prompt}</p>
-                            </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             ) : (
                 <div className="empty-state glass">
@@ -152,6 +204,24 @@ export default function Gallery({ user }) {
                     <button className="btn-secondary" onClick={() => setIsUploadOpen(true)}>
                         Upload First Image
                     </button>
+                </div>
+            )}
+
+            {isSelectionMode && selectedIds.length > 0 && (
+                <div className="batch-actions-bar glass animate-slide-up">
+                    <span className="batch-info">{selectedIds.length} items selected</span>
+                    <div className="batch-btns">
+                        <button className="btn-secondary" onClick={() => setSelectedIds([])}>
+                            Deselect All
+                        </button>
+                        <button className="btn-primary btn-danger" onClick={handleBatchDelete}>
+                            <Trash2 size={18} />
+                            <span>Delete Selected</span>
+                        </button>
+                        <button className="btn-icon" onClick={toggleSelectMode}>
+                            <X size={20} />
+                        </button>
+                    </div>
                 </div>
             )}
 
