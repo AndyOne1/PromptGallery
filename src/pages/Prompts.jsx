@@ -77,7 +77,7 @@ export default function Prompts({ user }) {
                                     <span>{formatDate(p.createdAt)}</span>
                                 </div>
                                 <div className="prompt-actions">
-                                    <button className="btn-icon-small" onClick={() => copyPrompt(p.prompt, p.id)}>
+                                    <button className="btn-icon-small" onClick={() => copyPrompt(p.content || p.prompt, p.id)}>
                                         {copiedId === p.id ? <Check size={16} /> : <Copy size={16} />}
                                     </button>
                                     <button className="btn-icon-small delete" onClick={() => deletePrompt(p.id)}>
@@ -86,11 +86,11 @@ export default function Prompts({ user }) {
                                 </div>
                             </div>
                             <div className="prompt-body">
-                                <p>{p.prompt}</p>
+                                <p>{p.content || p.prompt}</p>
                             </div>
                             <div className="prompt-footer">
                                 <div className="card-tags">
-                                    {p.tags?.map(tag => (
+                                    {(p.refinedTags || p.tags)?.map(tag => (
                                         <span key={tag} className="tag">{tag}</span>
                                     ))}
                                 </div>
