@@ -145,8 +145,12 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
     };
 
     const handleGenerate = async () => {
-        const key = localStorage.getItem('openrouter_key');
-        if (!key) return;
+        console.log('handleGenerate started');
+        const key = localStorage.getItem('openrouter_key')?.trim();
+        if (!key) {
+            alert('Bitte hinterlege zuerst deinen OpenRouter API Key in den Einstellungen (Zahnrad-Icon oben rechts).');
+            return;
+        }
 
         const allTags = getAccumulatedTags();
         const finalSelections = {
@@ -158,13 +162,16 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
             rawSelections: selections
         };
 
+        console.log('Starting generation with selections:', finalSelections);
         setIsGenerating(true);
         try {
             const data = await generateFinalPrompt(key, finalSelections);
+            console.log('Generation success:', data);
             setResult(data);
             setCurrentStepId('result');
         } catch (error) {
-            alert('Generation failed: ' + error.message);
+            console.error('Generation error:', error);
+            alert('Generation failed: ' + (error.message || 'Unknown error'));
         } finally {
             setIsGenerating(false);
         }
@@ -206,6 +213,13 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
                             </div>
                         )}
                     </header>
+
+                    {!localStorage.getItem('openrouter_key') && (
+                        <div className="api-warning-banner glass animate-pulse">
+                            <AlertTriangle size={18} />
+                            <span>API Key fehlt! Bitte in den Einstellungen (Zahnrad) hinterlegen.</span>
+                        </div>
+                    )}
 
                     <div className="review-accordion">
                         {/* 1. CONTENT SAFETY PRESETS */}
