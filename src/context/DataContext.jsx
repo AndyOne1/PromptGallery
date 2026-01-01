@@ -47,11 +47,15 @@ export function DataProvider({ children, user }) {
             let data;
             if (view === 'public') {
                 data = await galleryApi.getPublic();
-                setPublicImages(data || []);
+                // Sort by newest first
+                const sorted = (data || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                setPublicImages(sorted);
                 setLastFetch(prev => ({ ...prev, publicImages: now }));
             } else if (user) {
                 data = await galleryApi.getPrivate();
-                setPrivateImages(data || []);
+                // Sort by newest first
+                const sorted = (data || []).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                setPrivateImages(sorted);
                 setLastFetch(prev => ({ ...prev, privateImages: now }));
             }
         } catch (err) {

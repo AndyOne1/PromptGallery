@@ -4,7 +4,8 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { galleryApi, promptsApi } from '../../services/api';
 import { normalizePromptText } from '../../utils/stringUtils';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Calendar, Clock, BookmarkPlus } from 'lucide-react';
+import { useData } from '../../context/DataContext';
 
 export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, user, onUpdateImage }) {
     const [copied, setCopied] = useState(false);
@@ -13,6 +14,8 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
     const [showAllTags, setShowAllTags] = useState(false);
     const [linkedPrompts, setLinkedPrompts] = useState([]);
     const [isLoadingPrompts, setIsLoadingPrompts] = useState(false);
+    const [isSavingPrompt, setIsSavingPrompt] = useState(false);
+    const { addPromptToCache } = useData();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -117,6 +120,12 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
                                             {image.isPublic ? <Globe size={14} /> : <Shield size={14} />}
                                             {image.isPublic ? 'Public' : 'Private'}
                                         </span>
+                                        <div className="meta-timestamp">
+                                            <Calendar size={12} />
+                                            <span>{new Date(image.createdAt).toLocaleDateString()}</span>
+                                            <Clock size={12} className="ml-2" />
+                                            <span>{new Date(image.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -180,6 +189,27 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
 
                                 {isOwner && (
                                     <>
+                                        <button
+                                            className="btn-secondary"
+                                            onClick={async () => {
+                                                setIsSavingPrompt(true);
+                                                try {
+                                                    const saved = await promptsApi.save(image.prompt, image.tags);
+                                                    addPromptToCache(saved);
+                                                    alert('Prompt saved to your collection!');
+                                                    loadLinkedPrompts(); // Refresh links
+                                                } catch (err) {
+                                                    alert('Failed to save prompt');
+                                                } finally {
+                                                    setIsSavingPrompt(false);
+                                                }
+                                            }}
+                                            disabled={isSavingPrompt}
+                                            title="Save prompt to your collection"
+                                        >
+                                            {isSavingPrompt ? <Loader2 className="spin" size={18} /> : <BookmarkPlus size={18} />}
+                                            <span>Save Prompt</span>
+                                        </button>
                                         <button className={`btn-secondary ${image.isPublic ? 'active' : ''}`} onClick={handleTogglePublic} disabled={isUpdating}>
                                             {isUpdating ? <Loader2 className="spin" size={18} /> : (image.isPublic ? <Shield size={18} /> : <Globe size={18} />)}
                                             <span>{image.isPublic ? 'Make Private' : 'Publish'}</span>

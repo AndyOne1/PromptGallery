@@ -382,3 +382,16 @@
     text-align: center;
     background: rgba(0, 0, 0, 0.1);
 }
+
+.meta-timestamp {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    margin-left: 1rem;
+    padding-left: 1rem;
+    border-left: 1px solid var(--glass-border);
+}
+
+.ml-2 { margin-left: 0.5rem; }

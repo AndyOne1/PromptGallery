@@ -36,21 +36,47 @@ export const handler = async (event) => {
 
             // Handle batch upload
             if (Array.isArray(body)) {
-                const insertedItems = await db.insert(galleryItems).values(
-                    body.map(item => ({
-                        userId: user.userId,
-                        url: item.url,
-                        prompt: item.prompt,
-                        title: item.title,
-                        description: item.description,
-                        tags: item.tags || [],
-                        isPublic: !!item.isPublic
-                    }))
-                ).returning();
+                const insertedItems = [];
+                for (const item of body) {
+                    const existing = await db.select().from(galleryItems)
+                        .where(and(
+                            eq(galleryItems.userId, user.userId),
+                            eq(galleryItems.url, item.url)
+                        )).limit(1);
+
+                    if (existing.length > 0) {
+                        insertedItems.push(existing[0]);
+                    } else {
+                        const [newItem] = await db.insert(galleryItems).values({
+                            userId: user.userId,
+                            url: item.url,
+                            prompt: item.prompt,
+                            title: item.title,
+                            description: item.description,
+                            tags: item.tags || [],
+                            isPublic: !!item.isPublic
+                        }).returning();
+                        insertedItems.push(newItem);
+                    }
+                }
                 return { statusCode: 201, headers, body: JSON.stringify(insertedItems) };
             }
 
             // Handle single upload (legacy support)
+            const existing = await db.select().from(galleryItems)
+                .where(and(
+                    eq(galleryItems.userId, user.userId),
+                    eq(galleryItems.url, body.url)
+                )).limit(1);
+
+            if (existing.length > 0) {
+                return {
+                    statusCode: 200,
+                    headers,
+                    body: JSON.stringify(existing[0])
+                };
+            }
+
             const [newItem] = await db.insert(galleryItems).values({
                 userId: user.userId,
                 url: body.url,
