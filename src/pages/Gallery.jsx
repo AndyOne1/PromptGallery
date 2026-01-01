@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { Upload, Search, Settings as SettingsIcon, Copy, Check, Shield, Globe, Loader2, ListChecks, Trash2, X } from 'lucide-react';
 import UploadModal from '../components/Gallery/UploadModal';
 import ImageDetailView from '../components/Gallery/ImageDetailView';
