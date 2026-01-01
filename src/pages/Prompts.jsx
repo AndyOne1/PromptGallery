@@ -141,6 +141,7 @@ export default function Prompts({ user }) {
                                         </div>
                                     </div>
                                     <div className="prompt-body">
+                                        <h3 className="prompt-card-title">{p.title || 'Untitled Prompt'}</h3>
                                         <p className="prompt-text-truncate">{p.content || p.prompt}</p>
                                     </div>
                                     <div className="prompt-footer">

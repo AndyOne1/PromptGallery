@@ -244,6 +244,7 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
                     <div className="success-icon"><Check size={32} /></div>
                     <h3>Your Prompt is Ready!</h3>
                     <div className="result-card glass">
+                        <h4 className="result-title title-gradient">{result?.title}</h4>
                         <p className="final-prompt">{result?.prompt}</p>
                         <div className="result-tags">
                             {result?.refined_tags?.map(tag => <span key={tag} className="tag">{tag}</span>)}

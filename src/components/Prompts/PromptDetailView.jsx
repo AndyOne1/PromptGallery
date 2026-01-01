@@ -59,19 +59,23 @@ export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) 
     };
 
     const dateInfo = formatDate(prompt.createdAt);
+    const promptTitle = prompt.title || (linkedImages.length > 0 ? linkedImages[0].title : 'Saved Prompt Record');
 
     const modalContent = (
         <div className="modal-overlay" onClick={onClose}>
             <div className="modal-content glass animate-fade-in prompt-detail-modal" onClick={e => e.stopPropagation()}>
                 <header className="modal-header">
-                    <div className="prompt-meta">
-                        <div className="meta-item">
-                            <Calendar size={14} />
-                            <span>{dateInfo.day}</span>
-                        </div>
-                        <div className="meta-item">
-                            <Clock size={14} />
-                            <span>{dateInfo.time}</span>
+                    <div className="prompt-meta-wrapper">
+                        <h2 className="title-gradient">{promptTitle}</h2>
+                        <div className="prompt-meta">
+                            <div className="meta-item">
+                                <Calendar size={14} />
+                                <span>{dateInfo.day}</span>
+                            </div>
+                            <div className="meta-item">
+                                <Clock size={14} />
+                                <span>{dateInfo.time}</span>
+                            </div>
                         </div>
                     </div>
                     <button className="btn-icon" onClick={onClose}><X size={24} /></button>

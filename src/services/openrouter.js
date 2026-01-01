@@ -79,6 +79,7 @@ export const generateFinalPrompt = async (apiKey, selections) => {
                         
                         Return a JSON object with: 
                         { 
+                          "title": "Extremely short subject-focused title (3-5 words max)",
                           "prompt": "The detailed natural language prompt", 
                           "refined_tags": ["Strictly 6-8 tags total. Use broad categories: Category, Style, Subject, Environment. No micro-tags or redundant details."] 
                         }`

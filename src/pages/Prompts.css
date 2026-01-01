@@ -117,3 +117,19 @@
     margin-top: 3rem;
     padding-bottom: 3rem;
 }
+.prompt-card-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: var(--primary-light);
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.prompt-meta-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}

@@ -25,6 +25,7 @@ export const handler = async (event) => {
             const body = JSON.parse(event.body);
             const [newItem] = await db.insert(savedPrompts).values({
                 userId: user.userId,
+                title: body.title,
                 content: body.content,
                 refinedTags: body.refinedTags || []
             }).returning();

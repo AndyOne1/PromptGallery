@@ -20,7 +20,7 @@ export default function Generator({ user }) {
     const handleComplete = async (result) => {
         if (user) {
             try {
-                await promptsApi.save(result.prompt, result.refined_tags);
+                await promptsApi.save(result.prompt, result.refined_tags, result.title);
             } catch (err) {
                 console.error('Failed to save prompt to DB:', err);
             }
@@ -28,6 +28,7 @@ export default function Generator({ user }) {
             const saved = JSON.parse(localStorage.getItem('generated_prompts') || '[]');
             const newPrompt = {
                 id: Date.now(),
+                title: result.title,
                 prompt: result.prompt,
                 tags: result.refined_tags,
                 createdAt: new Date().toISOString()

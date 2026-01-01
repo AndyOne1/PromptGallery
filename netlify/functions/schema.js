@@ -23,6 +23,7 @@ export const galleryItems = pgTable('gallery_items', {
 export const savedPrompts = pgTable('saved_prompts', {
     id: serial('id').primaryKey(),
     userId: integer('user_id').references(() => users.id).notNull(),
+    title: text('title'),
     content: text('content').notNull(),
     refinedTags: jsonb('refined_tags').$type().notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),

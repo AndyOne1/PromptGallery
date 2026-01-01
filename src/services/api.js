@@ -47,8 +47,8 @@ export const promptsApi = {
         const response = await axios.get(`${API_BASE}/prompts`, { headers: getAuthHeaders() });
         return response.data;
     },
-    save: async (content, refinedTags) => {
-        const response = await axios.post(`${API_BASE}/prompts`, { content, refinedTags }, { headers: getAuthHeaders() });
+    save: async (content, refinedTags, title) => {
+        const response = await axios.post(`${API_BASE}/prompts`, { content, refinedTags, title }, { headers: getAuthHeaders() });
         return response.data;
     },
     delete: async (id) => {

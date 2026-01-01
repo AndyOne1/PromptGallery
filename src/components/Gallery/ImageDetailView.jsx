@@ -194,7 +194,7 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
                                             onClick={async () => {
                                                 setIsSavingPrompt(true);
                                                 try {
-                                                    const saved = await promptsApi.save(image.prompt, image.tags);
+                                                    const saved = await promptsApi.save(image.prompt, image.tags, image.title);
                                                     addPromptToCache(saved);
                                                     alert('Prompt saved to your collection!');
                                                     loadLinkedPrompts(); // Refresh links
