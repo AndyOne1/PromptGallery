@@ -22,7 +22,14 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
     const [isGenerating, setIsGenerating] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [result, setResult] = useState(null);
-    const [openSections, setOpenSections] = useState(['info']); // 'info' is extra instructions
+    const [openSections, setOpenSections] = useState(() => {
+        if (initialData) {
+            const initial = ['tags'];
+            if (initialData.originalPrompt) initial.push('reference');
+            return initial;
+        }
+        return ['info'];
+    });
     const [safetyLevel, setSafetyLevel] = useState('sfw');
 
     const currentStep = WIZARD_DATA.steps[currentStepId];
@@ -103,8 +110,10 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
                     setResult(null);
                     setCurrentStepId('finish');
                     if (initialData.useReference) setUseReference(true);
-                    // Open safety and the first wizard step by default to show progress
-                    setOpenSections(['safety', 'amateur_1_1']);
+                    // Only open the reference and tags by default to show what was found
+                    const initialOpen = ['tags'];
+                    if (initialData.originalPrompt) initialOpen.push('reference');
+                    setOpenSections(initialOpen);
                 } catch (error) {
                     console.error('Wizard analysis failed:', error);
                 } finally {

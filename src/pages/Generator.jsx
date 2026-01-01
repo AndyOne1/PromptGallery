@@ -36,6 +36,8 @@ export default function Generator({ user }) {
             const updated = [newPrompt, ...saved];
             localStorage.setItem('generated_prompts', JSON.stringify(updated));
         }
+        setShowWizard(false);
+        setInitialSelections(null);
     };
 
     return (
@@ -62,7 +64,11 @@ export default function Generator({ user }) {
                     </button>
                 </div>
             ) : (
-                <GeneratorWizard onComplete={handleComplete} initialData={initialSelections} />
+                <GeneratorWizard
+                    key={initialSelections ? (initialSelections.imageUrl || initialSelections.originalPrompt || 'template') : 'new'}
+                    onComplete={handleComplete}
+                    initialData={initialSelections}
+                />
             )}
         </div>
     );
