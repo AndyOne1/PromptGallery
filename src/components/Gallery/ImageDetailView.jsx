@@ -2,23 +2,44 @@ import { X, Copy, Check, Trash2, Wand2, Globe, Shield, Loader2 } from 'lucide-re
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { galleryApi } from '../../services/api';
+import { galleryApi, promptsApi } from '../../services/api';
+import { normalizePromptText } from '../../utils/stringUtils';
+import { MessageSquare } from 'lucide-react';
 
 export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, user, onUpdateImage }) {
     const [copied, setCopied] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [showAllTags, setShowAllTags] = useState(false);
+    const [linkedPrompts, setLinkedPrompts] = useState([]);
+    const [isLoadingPrompts, setIsLoadingPrompts] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
         if (isOpen) {
             document.body.classList.add('modal-open');
+            if (image) loadLinkedPrompts();
         } else {
             document.body.classList.remove('modal-open');
         }
         return () => document.body.classList.remove('modal-open');
-    }, [isOpen]);
+    }, [isOpen, image]);
+
+    const loadLinkedPrompts = async () => {
+        setIsLoadingPrompts(true);
+        try {
+            const allPrompts = await promptsApi.get();
+            const normalizedImagePrompt = normalizePromptText(image.prompt);
+            const matches = allPrompts.filter(p =>
+                normalizePromptText(p.content || p.prompt) === normalizedImagePrompt
+            );
+            setLinkedPrompts(matches);
+        } catch (err) {
+            console.error('Failed to load linked prompts:', err);
+        } finally {
+            setIsLoadingPrompts(false);
+        }
+    };
 
     if (!isOpen || !image) return null;
 
@@ -134,6 +155,20 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
                                     )}
                                 </div>
                             </section>
+
+                            {linkedPrompts.length > 0 && (
+                                <section className="detail-segment">
+                                    <label>Linked Saved Records</label>
+                                    <div className="linked-prompts-list">
+                                        {linkedPrompts.map(p => (
+                                            <div key={p.id} className="linked-prompt-card glass">
+                                                <MessageSquare size={16} className="text-secondary" />
+                                                <span>Saved Prompt #{p.id}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </section>
+                            )}
                         </div>
 
                         <footer className="detail-footer">

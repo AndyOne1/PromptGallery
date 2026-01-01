@@ -2,6 +2,7 @@ import { X, Copy, Check, Trash2, Calendar, Hash, Clock, Image as ImageIcon } fro
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { galleryApi } from '../../services/api';
+import { normalizePromptText } from '../../utils/stringUtils';
 
 export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) {
     const [copied, setCopied] = useState(false);
@@ -23,9 +24,11 @@ export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) 
     const loadLinkedImages = async () => {
         setIsLoading(true);
         try {
-            const allImages = await galleryApi.get();
-            const promptText = (prompt.content || prompt.prompt || '').trim();
-            const matches = allImages.filter(img => (img.prompt || '').trim() === promptText);
+            const allImages = await galleryApi.getPrivate();
+            const normalizedContent = normalizePromptText(prompt.content || prompt.prompt);
+            const matches = allImages.filter(img =>
+                normalizePromptText(img.prompt) === normalizedContent
+            );
             setLinkedImages(matches);
         } catch (err) {
             console.error('Failed to load linked images:', err);
