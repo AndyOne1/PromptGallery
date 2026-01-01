@@ -1,20 +1,42 @@
 import { useState, useRef, useEffect } from 'react';
-import { Wand2, Sparkles, Send, Shield, RefreshCcw, Check, AlertTriangle } from 'lucide-react';
+import { Wand2, Sparkles, Send, Shield, RefreshCcw, Check, AlertTriangle, User } from 'lucide-react';
 import { generateSmartPrompt } from '../../services/openrouter';
+import { charactersApi } from '../../services/api';
 
 const VIBES = [
     'Cinematic', 'Candid', 'Cyberpunk', 'Ethereal', 'Dark Fantasy',
     'Studio Portrait', 'Vintage', 'Anime', 'Minimalist', 'Surreal'
 ];
 
-export default function SmartGenerator({ onComplete }) {
+export default function SmartGenerator({ onComplete, user }) {
     const [instruction, setInstruction] = useState('');
     const [selectedVibes, setSelectedVibes] = useState([]);
     const [safetyLevel, setSafetyLevel] = useState('sfw');
     const [useReference, setUseReference] = useState(false);
     const [referenceGender, setReferenceGender] = useState('');
+    const [useCharacter, setUseCharacter] = useState(false);
+    const [selectedCharacter, setSelectedCharacter] = useState(null);
+    const [characters, setCharacters] = useState([]);
     const [isGenerating, setIsGenerating] = useState(false);
     const textareaRef = useRef(null);
+
+    useEffect(() => {
+        loadCharacters();
+    }, [user]);
+
+    const loadCharacters = async () => {
+        if (!user) {
+            const local = JSON.parse(localStorage.getItem('local_characters') || '[]');
+            setCharacters(local);
+            return;
+        }
+        try {
+            const data = await charactersApi.getAll();
+            setCharacters(data);
+        } catch (err) {
+            console.error('Failed to load characters:', err);
+        }
+    };
 
     // Auto-resize textarea
     useEffect(() => {
@@ -40,7 +62,6 @@ export default function SmartGenerator({ onComplete }) {
         ];
         const randomInfo = surprises[Math.floor(Math.random() * surprises.length)];
         setInstruction(randomInfo);
-        // Also pick a random vibe
         const randomVibe = VIBES[Math.floor(Math.random() * VIBES.length)];
         setSelectedVibes([randomVibe]);
     };
@@ -56,13 +77,25 @@ export default function SmartGenerator({ onComplete }) {
 
         setIsGenerating(true);
         try {
+            // Build instruction with character context if selected
+            let finalInstruction = instruction;
+            if (useCharacter && selectedCharacter?.prompt) {
+                finalInstruction = `[CHARACTER REFERENCE]\n${selectedCharacter.prompt}\n\n[SCENE REQUEST]\n${instruction}`;
+            }
+
             const result = await generateSmartPrompt(key, {
-                instruction,
+                instruction: finalInstruction,
                 vibes: selectedVibes,
                 safetyLevel,
                 useReference,
                 referenceGender
             });
+
+            // Add character tag if character was used
+            if (useCharacter && selectedCharacter) {
+                result.refined_tags = [...(result.refined_tags || []), 'Character Prompt', selectedCharacter.name];
+            }
+
             onComplete(result);
         } catch (error) {
             alert('Generation failed: ' + error.message);
@@ -106,6 +139,45 @@ export default function SmartGenerator({ onComplete }) {
             </div>
 
             <div className="smart-controls">
+                {/* Character Selection - NEW */}
+                <div className="control-section">
+                    <label>Use Character</label>
+                    <div className="flex-col gap-3">
+                        <label className="toggle-label glass">
+                            <input
+                                type="checkbox"
+                                checked={useCharacter}
+                                onChange={(e) => {
+                                    setUseCharacter(e.target.checked);
+                                    if (!e.target.checked) setSelectedCharacter(null);
+                                }}
+                            />
+                            <span>Include character in prompt</span>
+                        </label>
+
+                        {useCharacter && (
+                            <div className="character-selector glass animate-fade-in">
+                                {characters.length > 0 ? (
+                                    <div className="character-chips">
+                                        {characters.map(char => (
+                                            <button
+                                                key={char.id}
+                                                className={`character-chip ${selectedCharacter?.id === char.id ? 'active' : ''}`}
+                                                onClick={() => setSelectedCharacter(char)}
+                                            >
+                                                <User size={14} />
+                                                <span>{char.name}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <p className="text-sm text-dim">Keine Charaktere vorhanden</p>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 <div className="control-section">
                     <label>Reference Image</label>
                     <div className="flex-col gap-3">
@@ -139,6 +211,7 @@ export default function SmartGenerator({ onComplete }) {
                         )}
                     </div>
                 </div>
+
 
                 <div className="control-section">
                     <label>Vibe Modifiers</label>

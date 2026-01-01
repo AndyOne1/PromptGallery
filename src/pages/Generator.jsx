@@ -76,7 +76,7 @@ export default function Generator({ user }) {
         }
 
         if (mode === 'smart') {
-            return <SmartGenerator onComplete={handleComplete} />;
+            return <SmartGenerator onComplete={handleComplete} user={user} />;
         }
 
         if (mode === 'character') {

@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Plus, Search, Copy, Check, Trash2, Loader2, X, Pin, Image as ImageIcon } from 'lucide-react';
+import { User, Plus, Search, Copy, Check, Loader2 } from 'lucide-react';
 import { charactersApi } from '../services/api';
+import CharacterDetailView from '../components/Characters/CharacterDetailView';
 import ConfirmationModal from '../components/UI/ConfirmationModal';
 import '../components/Gallery/Gallery.css';
 import './Characters.css';
@@ -21,7 +22,6 @@ export default function Characters({ user }) {
 
     const loadCharacters = async () => {
         if (!user) {
-            // Load from localStorage for non-logged users
             const local = JSON.parse(localStorage.getItem('local_characters') || '[]');
             setCharacters(local);
             setIsLoading(false);
@@ -53,6 +53,7 @@ export default function Characters({ user }) {
             localStorage.setItem('local_characters', JSON.stringify(updated));
             setCharacters(updated);
             setDeleteConfirm(null);
+            setSelectedCharacter(null);
             return;
         }
 
@@ -60,7 +61,7 @@ export default function Characters({ user }) {
             await charactersApi.delete(id);
             setCharacters(prev => prev.filter(c => c.id !== id));
             setDeleteConfirm(null);
-            if (selectedCharacter?.id === id) setSelectedCharacter(null);
+            setSelectedCharacter(null);
         } catch (err) {
             console.error('Delete failed:', err);
         }
@@ -161,75 +162,14 @@ export default function Characters({ user }) {
                 )}
             </div>
 
-            {/* Character Detail Modal */}
-            {selectedCharacter && (
-                <div className="modal-overlay" onClick={() => setSelectedCharacter(null)}>
-                    <div className="modal-content character-detail-modal glass" onClick={e => e.stopPropagation()}>
-                        <button className="modal-close" onClick={() => setSelectedCharacter(null)}>
-                            <X size={20} />
-                        </button>
-
-                        <div className="character-detail-header">
-                            <div className="character-portrait">
-                                {selectedCharacter.pinnedImage?.url ? (
-                                    <img src={selectedCharacter.pinnedImage.url} alt={selectedCharacter.name} />
-                                ) : (
-                                    <div className="portrait-placeholder">
-                                        <User size={64} />
-                                    </div>
-                                )}
-                            </div>
-                            <div className="character-info">
-                                <h2>{selectedCharacter.name}</h2>
-                                <div className="character-tags">
-                                    {selectedCharacter.attributes?.age && (
-                                        <span className="tag">{selectedCharacter.attributes.age}</span>
-                                    )}
-                                    {selectedCharacter.attributes?.gender && (
-                                        <span className="tag">{selectedCharacter.attributes.gender}</span>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="character-attributes-section">
-                            <h3>Attributes</h3>
-                            <div className="attributes-grid">
-                                {Object.entries(selectedCharacter.attributes || {}).map(([key, value]) => (
-                                    <div key={key} className="attribute-row">
-                                        <span className="attribute-label">{key}:</span>
-                                        <span className="attribute-value">{value || '—'}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        {selectedCharacter.prompt && (
-                            <div className="character-prompt-section glass">
-                                <h3>Character Prompt</h3>
-                                <p className="prompt-text">{selectedCharacter.prompt}</p>
-                                <button
-                                    className="btn-secondary"
-                                    onClick={(e) => handleCopyPrompt(e, selectedCharacter.prompt, selectedCharacter.id)}
-                                >
-                                    {copiedId === selectedCharacter.id ? <Check size={16} /> : <Copy size={16} />}
-                                    <span>Copy Prompt</span>
-                                </button>
-                            </div>
-                        )}
-
-                        <div className="character-actions">
-                            <button
-                                className="btn-secondary btn-danger"
-                                onClick={() => setDeleteConfirm(selectedCharacter.id)}
-                            >
-                                <Trash2 size={16} />
-                                <span>Delete</span>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* New Landscape Character Detail View */}
+            <CharacterDetailView
+                character={selectedCharacter}
+                isOpen={!!selectedCharacter}
+                onClose={() => setSelectedCharacter(null)}
+                onDelete={(id) => setDeleteConfirm(id)}
+                user={user}
+            />
 
             <ConfirmationModal
                 isOpen={!!deleteConfirm}
@@ -242,3 +182,4 @@ export default function Characters({ user }) {
         </>
     );
 }
+
