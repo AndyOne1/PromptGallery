@@ -1,4 +1,4 @@
-import { db } from '../../src/db';
+import { db } from './db';
 import { savedPrompts } from '../../src/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { verifyToken, headers } from './utils';
