@@ -1,7 +1,7 @@
-import { db } from './db';
-import { galleryItems } from './schema';
+import { db } from './db.js';
+import { galleryItems } from './schema.js';
 import { eq, and, or } from 'drizzle-orm';
-import { verifyToken, headers } from './utils';
+import { verifyToken, headers } from './utils.js';
 
 export const handler = async (event) => {
     if (event.httpMethod === 'OPTIONS') {

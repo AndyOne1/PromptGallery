@@ -1,7 +1,7 @@
-import { db } from './db';
-import { savedPrompts } from './schema';
+import { db } from './db.js';
+import { savedPrompts } from './schema.js';
 import { eq, and } from 'drizzle-orm';
-import { verifyToken, headers } from './utils';
+import { verifyToken, headers } from './utils.js';
 
 export const handler = async (event) => {
     if (event.httpMethod === 'OPTIONS') {
