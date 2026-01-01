@@ -35,16 +35,44 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
                         acc[id] = {
                             question: step.question,
                             multi_select: !!step.multi_select,
-                            sections: step.sections?.map(s => ({ name: s.name, options: s.options.map(o => o.value) })),
-                            options: step.options?.map(o => o.value)
+                            sections: step.sections?.map(s => ({
+                                name: s.name,
+                                options: s.options.map(o => ({ label: o.label, value: o.value }))
+                            })),
+                            options: step.options?.map(o => ({ label: o.label, value: o.value }))
                         };
                         return acc;
                     }, {});
 
                     const mapping = await analyzeImageForWizard(key, initialData.imageUrl, schema);
                     if (mapping?.selections) {
-                        setSelections(mapping.selections);
-                        if (mapping.identified_category === 'amateur') {
+                        const mappedSelections = {};
+                        const foundSteps = new Set();
+
+                        Object.entries(mapping.selections).forEach(([stepId, selection]) => {
+                            const step = WIZARD_DATA.steps[stepId];
+                            if (!step) return;
+
+                            if (step.multi_select) {
+                                mappedSelections[stepId] = selection;
+                                if (Object.values(selection).some(v => v.length > 0)) {
+                                    foundSteps.add(stepId);
+                                }
+                            } else {
+                                // Find the option object by value
+                                const val = typeof selection === 'object' ? selection.value : selection;
+                                const option = step.options?.find(o => o.value === val);
+                                if (option) {
+                                    mappedSelections[stepId] = option;
+                                    foundSteps.add(stepId);
+                                }
+                            }
+                        });
+
+                        setSelections(mappedSelections);
+
+                        // Populate history
+                        if (mapping.identified_category?.toLowerCase().includes('amateur')) {
                             setHistory([
                                 'amateur_1_1', 'amateur_1_2', 'amateur_1_3', 'amateur_1_4',
                                 'amateur_1_5', 'amateur_1_6', 'amateur_1_7', 'amateur_1_8',
@@ -52,6 +80,9 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
                                 'amateur_1_13', 'amateur_1_14', 'amateur_1_15', 'amateur_1_16',
                                 'amateur_1_18'
                             ]);
+                        } else {
+                            // If not recognized, at least show the steps that have data
+                            setHistory([...foundSteps]);
                         }
                     }
                     setResult(null);
@@ -309,6 +340,29 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
                                                 </button>
                                             ))}
                                         </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 2.5 ACCUMULATED TAGS */}
+                        <div className={`accordion-row glass ${openSections.includes('tags') ? 'open' : ''}`}>
+                            <header className="accordion-trigger" onClick={() => toggleSection('tags')}>
+                                <div className="trigger-label">
+                                    <Eye size={16} />
+                                    <span>Vorschau Tags ({getAccumulatedTags().length})</span>
+                                </div>
+                                <div className="trigger-status">
+                                    <ChevronDown size={18} className="icon-arrow" />
+                                </div>
+                            </header>
+                            <div className="accordion-content">
+                                <div className="tag-cloud small">
+                                    {getAccumulatedTags().map((tag, i) => (
+                                        <span key={i} className="tag-chip">{tag}</span>
+                                    ))}
+                                    {getAccumulatedTags().length === 0 && (
+                                        <span className="opacity-50">Noch keine Tags gesammelt...</span>
                                     )}
                                 </div>
                             </div>

@@ -64,11 +64,16 @@ export const analyzeImageForWizard = async (apiKey, imageUrl, wizardSchema) => {
             WIZARD SCHEMA: ${JSON.stringify(wizardSchema)}
             
             Rules:
-            1. Analyze the image/description and pick the BEST fit for EVERY step in the schema if possible.
-            2. Return ONLY a JSON object where keys are step IDs (e.g., "amateur_1_1") and values are the matching "value" from the options.
-            3. For multi_select steps, return an object mapping section names to arrays of values: { "Section Name": ["value1", "value2"] }.
-            4. If a step doesn't apply, omit it or return null.
-            5. Return the result in this format: { "selections": { ... }, "identified_category": "amateur" }`
+            1. Analyze the image/description and map it to the PROVIDED wizard schema.
+            2. For each step, you MUST choose the BEST matching "value" from the provided options. DO NOT invent new values.
+            3. For multi_select steps, the result must be an object where keys are the specific "sections" names and values are arrays of selected "value" strings.
+            4. If a step or option is not clearly applicable, skip it.
+            5. Return ONLY a JSON object in this format: 
+               { 
+                 "selections": { "step_id": { "value": "val" }, "multi_step_id": { "Section Name": ["val1", "val2"] } }, 
+                 "identified_category": "amateur" 
+               }
+            6. "identified_category" should be "amateur" if the image fits the Amateur Photography style.`
                     },
                     {
                         role: 'user',
