@@ -6,6 +6,8 @@ import { uploadToCloudinary } from '../../services/cloudinary';
 import { analyzePrompt } from '../../services/openrouter';
 import { compressImage } from '../../utils/imageUtils';
 import { galleryApi } from '../../services/api';
+import { useData } from '../../context/DataContext';
+import { normalizePromptText } from '../../utils/stringUtils';
 
 export default function UploadModal({ isOpen, onClose, onUploadComplete, initialPrompt = '', initialTags = [] }) {
     const [files, setFiles] = useState([]);
@@ -14,6 +16,7 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete, initial
     const [isPublic, setIsPublic] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
     const [status, setStatus] = useState('');
+    const { privateImages } = useData();
 
     useEffect(() => {
         if (isOpen) {
@@ -59,12 +62,25 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete, initial
 
         setIsUploading(true);
         try {
-            // 1. Analyze with OpenRouter
-            setStatus('Analyzing with AI...');
-            let analysis = await analyzePrompt(openRouterKey, prompt);
+            // 1. Check for existing metadata (Deduplication / Consistency)
+            setStatus('Checking for existing metadata...');
+            const normalizedCurrent = normalizePromptText(prompt);
+            const existingMatch = privateImages.find(img => normalizePromptText(img.prompt) === normalizedCurrent);
 
-            // If we have initial tags (from saved prompts), we prefer them but keep the AI's description
-            // If we have initial tags (from saved prompts), we prefer them but keep the AI's title/description
+            let analysis;
+            if (existingMatch) {
+                analysis = {
+                    tags: existingMatch.tags,
+                    title: existingMatch.title,
+                    description: existingMatch.description
+                };
+            } else {
+                // Analyze with OpenRouter
+                setStatus('Analyzing with AI...');
+                analysis = await analyzePrompt(openRouterKey, prompt);
+            }
+
+            // If we have initial tags (from saved prompts), we prefer them
             const finalTags = initialTags.length > 0 ? initialTags : analysis.tags;
             const finalTitle = analysis.title;
             const finalDescription = analysis.description;
