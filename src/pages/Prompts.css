@@ -102,7 +102,18 @@
     word-break: break-word;
 }
 
-.prompt-footer {
-    border-top: 1px solid var(--glass-border);
-    padding-top: 1rem;
+.prompt-text-truncate {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    line-height: 1.6;
+    color: var(--text-main);
+}
+
+.load-more-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 3rem;
+    padding-bottom: 3rem;
 }

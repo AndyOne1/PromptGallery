@@ -131,7 +131,7 @@ export default function Prompts({ user }) {
                 </div>
             </div>
 
-            {displayPrompts.length > 0 ? (
+            {filteredPrompts.length > 0 ? (
                 <>
                     <div className="prompts-list">
                         {displayPrompts.map((p, index) => {
@@ -181,36 +181,44 @@ export default function Prompts({ user }) {
                             );
                         })}
                     </div>
-                    ) : (
-                    <div className="empty-state glass">
-                        <MessageSquare size={48} className="text-dim" />
-                        <h3>{searchQuery ? 'No matching prompts found' : 'No prompts saved yet'}</h3>
-                        <p>{searchQuery ? 'Try a different search term.' : 'Go to the Generator to create your first high-quality prompt.'}</p>
-                    </div>
+                    {filteredPrompts.length > displayLimit && (
+                        <div className="load-more-container">
+                            <button className="btn-secondary" onClick={() => setDisplayLimit(prev => prev + 10)}>
+                                Show More Prompts
+                            </button>
+                        </div>
+                    )}
+                </>
+            ) : (
+                <div className="empty-state glass">
+                    <MessageSquare size={48} className="text-dim" />
+                    <h3>{searchQuery ? 'No matching prompts found' : 'No prompts saved yet'}</h3>
+                    <p>{searchQuery ? 'Try a different search term.' : 'Go to the Generator to create your first high-quality prompt.'}</p>
+                </div>
             )}
 
-                    <UploadModal
-                        isOpen={isUploadOpen}
-                        onClose={() => {
-                            setIsUploadOpen(false);
-                            setSelectedPrompt(null);
-                        }}
-                        onUploadComplete={() => {
-                            setIsUploadOpen(false);
-                            setSelectedPrompt(null);
-                        }}
-                        initialPrompt={selectedPrompt?.content || selectedPrompt?.prompt}
-                        initialTags={selectedPrompt?.refinedTags || selectedPrompt?.tags}
-                    />
-                    <PromptDetailView
-                        isOpen={isDetailOpen}
-                        prompt={selectedPrompt}
-                        onClose={() => {
-                            setIsDetailOpen(false);
-                            setSelectedPrompt(null);
-                        }}
-                        onDelete={deletePrompt}
-                    />
-                </div>
-            );
+            <UploadModal
+                isOpen={isUploadOpen}
+                onClose={() => {
+                    setIsUploadOpen(false);
+                    setSelectedPrompt(null);
+                }}
+                onUploadComplete={() => {
+                    setIsUploadOpen(false);
+                    setSelectedPrompt(null);
+                }}
+                initialPrompt={selectedPrompt?.content || selectedPrompt?.prompt}
+                initialTags={selectedPrompt?.refinedTags || selectedPrompt?.tags}
+            />
+            <PromptDetailView
+                isOpen={isDetailOpen}
+                prompt={selectedPrompt}
+                onClose={() => {
+                    setIsDetailOpen(false);
+                    setSelectedPrompt(null);
+                }}
+                onDelete={deletePrompt}
+            />
+        </div>
+    );
 }
