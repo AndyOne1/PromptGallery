@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { X, Upload, Loader2, Wand2, Globe, Shield } from 'lucide-react';
 import { uploadToCloudinary } from '../../services/cloudinary';
