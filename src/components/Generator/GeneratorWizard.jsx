@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { WIZARD_DATA } from '../../data/wizard';
 import { generateFinalPrompt, analyzeTemplateForWizard } from '../../services/openrouter';
-import { ChevronDown, ChevronRight, ChevronLeft, Wand2, Check, RefreshCcw, Save, Trash2, Eye, Shield, AlertTriangle, Loader2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, ChevronLeft, Wand2, Check, RefreshCcw, Save, Trash2, Eye, Shield, AlertTriangle, Loader2, Hash } from 'lucide-react';
 
 const GeneratorWizard = ({ onComplete, initialData }) => {
     const [currentStepId, setCurrentStepId] = useState(initialData ? 'finish' : 'root');
