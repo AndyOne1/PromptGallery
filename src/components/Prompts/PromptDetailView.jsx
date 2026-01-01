@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { normalizePromptText } from '../../utils/stringUtils';
 import { useData } from '../../context/DataContext';
 import ConfirmationModal from '../UI/ConfirmationModal';
+import ImageDetailView from '../Gallery/ImageDetailView';
 
 export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) {
     const [copied, setCopied] = useState(false);
@@ -12,7 +13,8 @@ export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) 
     const [isExpanded, setIsExpanded] = useState(false);
     const [showAllTags, setShowAllTags] = useState(false);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-    const { privateImages } = useData();
+    const [selectedImage, setSelectedImage] = useState(null);
+    const { privateImages, user, updateImageInCache, removeImageFromCache } = useData();
 
     useEffect(() => {
         if (isOpen) {
@@ -106,7 +108,7 @@ export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) 
                         {linkedImages.length > 0 ? (
                             <div className="linked-images-grid">
                                 {linkedImages.map(img => (
-                                    <div key={img.id} className="linked-image-card glass">
+                                    <div key={img.id} className="linked-image-card glass clickable" onClick={() => setSelectedImage(img)}>
                                         <img src={img.url} alt={img.description} />
                                     </div>
                                 ))}
@@ -120,8 +122,13 @@ export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) 
                     </section>
                 </div>
 
-                <footer className="modal-footer">
-                    <div className="flex-row gap-4">
+                <footer className="modal-footer footer-split">
+                    <button className="btn-secondary text-danger btn-left" onClick={() => setIsDeleteConfirmOpen(true)}>
+                        <Trash2 size={18} />
+                        <span>Delete Prompt</span>
+                    </button>
+                    <div className="flex-row gap-3">
+                        <button className="btn-secondary" onClick={onClose}>Close</button>
                         <button className="btn-primary" onClick={() => {
                             const data = {
                                 originalPrompt: fullText,
@@ -135,12 +142,7 @@ export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) 
                             <Wand2 size={20} />
                             <span>Create Similar</span>
                         </button>
-                        <button className="btn-secondary text-danger" onClick={() => setIsDeleteConfirmOpen(true)}>
-                            <Trash2 size={18} />
-                            <span>Delete Prompt</span>
-                        </button>
                     </div>
-                    <button className="btn-primary" onClick={onClose}>Close</button>
                 </footer>
 
                 <ConfirmationModal
@@ -155,6 +157,24 @@ export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) 
                     confirmText="Delete forever"
                 />
             </div>
+            {selectedImage && (
+                <ImageDetailView
+                    isOpen={!!selectedImage}
+                    image={selectedImage}
+                    onClose={() => setSelectedImage(null)}
+                    user={user}
+                    onUpdateImage={(updated, deletedId) => {
+                        if (deletedId) {
+                            removeImageFromCache(deletedId);
+                            setSelectedImage(null);
+                        } else if (updated) {
+                            updateImageInCache(updated);
+                            setSelectedImage(updated);
+                        }
+                    }}
+                    onDeleteTag={() => { }} // Not implemented in this view context yet
+                />
+            )}
         </div>
     );
 
