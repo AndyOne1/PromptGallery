@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Save, Settings as SettingsIcon } from 'lucide-react';
 
 export default function Settings({ isOpen, onClose }) {
@@ -7,6 +8,15 @@ export default function Settings({ isOpen, onClose }) {
         cloudinary_name: '',
         cloudinary_preset: ''
     });
+
+    useEffect(() => {
+        if (isOpen) {
+            document.body.classList.add('modal-open');
+        } else {
+            document.body.classList.remove('modal-open');
+        }
+        return () => document.body.classList.remove('modal-open');
+    }, [isOpen]);
 
     useEffect(() => {
         setKeys({
@@ -25,9 +35,9 @@ export default function Settings({ isOpen, onClose }) {
 
     if (!isOpen) return null;
 
-    return (
-        <div className="modal-overlay">
-            <div className="modal-content glass animate-fade-in">
+    const modalContent = (
+        <div className="modal-overlay" onClick={onClose}>
+            <div className="modal-content glass animate-fade-in" onClick={e => e.stopPropagation()}>
                 <header className="modal-header">
                     <div className="flex-row gap-2">
                         <SettingsIcon size={20} className="text-secondary" />
@@ -80,4 +90,6 @@ export default function Settings({ isOpen, onClose }) {
             </div>
         </div>
     );
+
+    return createPortal(modalContent, document.getElementById('modal-root'));
 }

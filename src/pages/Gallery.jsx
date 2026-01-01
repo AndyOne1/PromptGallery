@@ -144,7 +144,8 @@ export default function Gallery({ user }) {
                                     ))}
                                     {img.tags.length > 3 && <span className="tag-more">+{img.tags.length - 3}</span>}
                                 </div>
-                                <h4 className="card-desc">{img.description}</h4>
+                                <h4 className="card-title">{img.title || img.description}</h4>
+                                {img.title && <p className="card-desc-small">{img.description}</p>}
                                 <p className="card-prompt">{img.prompt}</p>
                             </div>
                         </div>
