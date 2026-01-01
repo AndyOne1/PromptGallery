@@ -1051,3 +1051,191 @@
     min-width: 200px;
     justify-content: center;
 }
+
+/* ============================================
+   CHARACTER CREATOR STYLES
+   ============================================ */
+
+.character-creator-container {
+    max-width: 700px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.character-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.character-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.character-title-wrap h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.character-input-phase .character-input-area {
+    position: relative;
+}
+
+.character-input-area .magic-input {
+    min-height: 120px;
+    padding-right: 4rem;
+}
+
+.character-input-area .input-actions {
+    position: absolute;
+    bottom: 1rem;
+    right: 1rem;
+}
+
+/* Attributes Table */
+.character-attributes-table {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.character-attributes-table h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--accent-primary);
+}
+
+.attributes-grid {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.attribute-row {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.attribute-row:last-child {
+    border-bottom: none;
+}
+
+.attribute-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-dim);
+}
+
+.attribute-value {
+    font-size: 0.9rem;
+    color: var(--text-main);
+}
+
+/* Refinement */
+.refinement-input-area {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    align-items: center;
+}
+
+.refinement-input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    color: white;
+    font-size: 0.9rem;
+}
+
+.refinement-input:focus {
+    outline: none;
+    border-color: var(--accent-primary);
+}
+
+.refinement-input::placeholder {
+    color: rgba(255, 255, 255, 0.4);
+    font-style: italic;
+}
+
+/* Generate Button */
+.generate-btn,
+.save-btn {
+    width: 100%;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    font-size: 1rem;
+}
+
+/* Final Prompt Preview */
+.final-prompt-preview {
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.final-prompt-preview h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--accent-secondary);
+}
+
+.prompt-text {
+    font-size: 0.9rem;
+    line-height: 1.7;
+    color: var(--text-main);
+    margin-bottom: 0.75rem;
+}
+
+.prompt-summary {
+    font-size: 0.85rem;
+    font-style: italic;
+}
+
+/* Error Banner */
+.error-banner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1.25rem;
+    background: rgba(239, 68, 68, 0.1) !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+    border-radius: 12px;
+    color: #ef4444;
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Generating Overlay */
+.generating-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    background: rgba(0, 0, 0, 0.7);
+    border-radius: 24px;
+    z-index: 10;
+}
+
+.generating-overlay p {
+    color: var(--text-dim);
+    font-size: 0.9rem;
+}
+
+.character-refining-phase,
+.character-saving-phase {
+    position: relative;
+}

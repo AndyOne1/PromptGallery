@@ -57,3 +57,38 @@ export const promptsApi = {
         return response.data;
     }
 };
+
+export const charactersApi = {
+    getAll: async () => {
+        const response = await axios.get(`${API_BASE}/characters`, { headers: getAuthHeaders() });
+        return response.data;
+    },
+    getById: async (id) => {
+        const response = await axios.get(`${API_BASE}/characters/${id}`, { headers: getAuthHeaders() });
+        return response.data;
+    },
+    create: async (data) => {
+        const response = await axios.post(`${API_BASE}/characters`, data, { headers: getAuthHeaders() });
+        return response.data;
+    },
+    update: async (id, data) => {
+        const response = await axios.put(`${API_BASE}/characters/${id}`, data, { headers: getAuthHeaders() });
+        return response.data;
+    },
+    delete: async (id) => {
+        const response = await axios.delete(`${API_BASE}/characters/${id}`, { headers: getAuthHeaders() });
+        return response.data;
+    },
+    linkImage: async (characterId, imageId) => {
+        const response = await axios.post(`${API_BASE}/characters/${characterId}/images`, { imageId }, { headers: getAuthHeaders() });
+        return response.data;
+    },
+    pinImage: async (characterId, imageId) => {
+        const response = await axios.put(`${API_BASE}/characters/${characterId}/pin/${imageId}`, {}, { headers: getAuthHeaders() });
+        return response.data;
+    },
+    unlinkImage: async (characterId, imageId) => {
+        const response = await axios.delete(`${API_BASE}/characters/${characterId}/images/${imageId}`, { headers: getAuthHeaders() });
+        return response.data;
+    },
+};

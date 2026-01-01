@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Wand2, Sparkles } from 'lucide-react';
+import { Wand2, Sparkles, User } from 'lucide-react';
 import GeneratorWizard from '../components/Generator/GeneratorWizard.jsx';
 import SmartGenerator from '../components/Generator/SmartGenerator.jsx';
+import CharacterCreator from '../components/Generator/CharacterCreator.jsx';
 import '../components/Generator/Generator.css';
 import { promptsApi } from '../services/api';
 
 export default function Generator({ user }) {
     const location = useLocation();
-    const [mode, setMode] = useState(location.state?.initialSelections ? 'wizard' : 'intro'); // 'intro', 'wizard', 'smart'
+    const [mode, setMode] = useState(location.state?.initialSelections ? 'wizard' : 'intro'); // 'intro', 'wizard', 'smart', 'character'
     const [initialSelections, setInitialSelections] = useState(location.state?.initialSelections || null);
 
     useEffect(() => {
@@ -58,6 +59,11 @@ export default function Generator({ user }) {
         setInitialSelections(null);
     };
 
+    const handleCharacterComplete = (character) => {
+        setMode('intro');
+        // Could navigate to characters page or show success
+    };
+
     const renderContent = () => {
         if (mode === 'wizard') {
             return (
@@ -71,6 +77,10 @@ export default function Generator({ user }) {
 
         if (mode === 'smart') {
             return <SmartGenerator onComplete={handleComplete} />;
+        }
+
+        if (mode === 'character') {
+            return <CharacterCreator onComplete={handleCharacterComplete} user={user} />;
         }
 
         return (
@@ -91,6 +101,10 @@ export default function Generator({ user }) {
                         <Sparkles size={20} />
                         Tell AI what you want
                     </button>
+                    <button className="btn-primary large" onClick={() => setMode('character')}>
+                        <User size={20} />
+                        Character Creator
+                    </button>
                 </div>
             </div>
         );
@@ -109,3 +123,4 @@ export default function Generator({ user }) {
         </div>
     );
 }
+

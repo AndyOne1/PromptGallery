@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
-import { Image, Wand2, MessageSquare, Layout } from 'lucide-react';
+import { Image, Wand2, MessageSquare, Layout, User } from 'lucide-react';
 import Gallery from './pages/Gallery';
 import Generator from './pages/Generator';
 import Prompts from './pages/Prompts';
+import Characters from './pages/Characters';
 import Auth from './pages/Auth';
 import './App.css';
 
@@ -40,6 +41,10 @@ function App() {
                 <Wand2 size={20} />
                 <span>Generator</span>
               </NavLink>
+              <NavLink to="/characters" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+                <User size={20} />
+                <span>Characters</span>
+              </NavLink>
               <NavLink to="/prompts" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
                 <MessageSquare size={20} />
                 <span>Prompts</span>
@@ -64,6 +69,7 @@ function App() {
             <Route path="/" element={<Gallery user={user} />} />
             <Route path="/gallery" element={<Gallery user={user} />} />
             <Route path="/generator" element={<Generator user={user} />} />
+            <Route path="/characters" element={<Characters user={user} />} />
             <Route path="/prompts" element={<Prompts user={user} />} />
             <Route path="/auth" element={<Auth onLogin={setUser} />} />
           </Routes>
@@ -78,3 +84,4 @@ function App() {
 }
 
 export default App;
+

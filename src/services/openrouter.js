@@ -252,3 +252,152 @@ export const generateSmartPrompt = async (apiKey, selections) => {
         throw error;
     }
 };
+
+// Character Creator Functions
+export const generateCharacterAttributes = async (apiKey, description) => {
+    try {
+        const response = await axios.post(
+            OPENROUTER_API_URL,
+            {
+                model: 'x-ai/grok-4.1-fast',
+                messages: [
+                    {
+                        role: 'system',
+                        content: `Du bist ein Creative Director für Charakterdesign. Analysiere die Beschreibung und extrahiere detaillierte Charakter-Attribute.
+
+Erstelle ein JSON-Objekt mit folgenden Attributen:
+- name: Passender Name für den Charakter
+- age: Alter (z.B. "24 Jahre")
+- gender: Geschlecht
+- hairColor: Haarfarbe mit Details
+- hairStyle: Frisur-Beschreibung
+- eyeColor: Augenfarbe
+- skinTone: Hautton
+- bodyType: Körperbau
+- height: Ungefähre Größe
+- facialFeatures: Gesichtsmerkmale (Augen, Nase, Lippen, Kinn etc.)
+- style: Typischer Kleidungsstil
+- personality: Persönlichkeitsmerkmale (2-3 Adjektive)
+- accessories: Typische Accessoires
+- distinguishingMarks: Besondere Merkmale (Narben, Tattoos, Piercings etc.)
+
+Sei kreativ und detailliert. Fülle Lücken sinnvoll aus basierend auf dem Kontext.
+Antworte NUR mit dem JSON-Objekt.`
+                    },
+                    {
+                        role: 'user',
+                        content: `Analysiere diese Charakterbeschreibung und erstelle detaillierte Attribute: "${description}"`
+                    }
+                ],
+                response_format: { type: 'json_object' }
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'HTTP-Referer': 'http://localhost:5173',
+                    'X-Title': 'PromptFlow Character',
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        const content = response.data.choices[0].message.content;
+        return typeof content === 'string' ? JSON.parse(content) : content;
+    } catch (error) {
+        console.error('Character generation error:', error);
+        throw error;
+    }
+};
+
+export const refineCharacterAttributes = async (apiKey, currentAttributes, refinementText) => {
+    try {
+        const response = await axios.post(
+            OPENROUTER_API_URL,
+            {
+                model: 'x-ai/grok-4.1-fast',
+                messages: [
+                    {
+                        role: 'system',
+                        content: `Du bist ein Charakter-Design-Assistent. Aktualisiere die Charakter-Attribute basierend auf den Änderungswünschen.
+
+WICHTIG: Ändere NUR die explizit genannten Attribute! Alle anderen bleiben EXAKT gleich.
+
+Gib das vollständige aktualisierte JSON-Objekt zurück mit allen Feldern.`
+                    },
+                    {
+                        role: 'user',
+                        content: `Aktuelle Attribute: ${JSON.stringify(currentAttributes)}
+
+Änderungswünsche: "${refinementText}"
+
+Aktualisiere NUR die genannten Attribute und gib das vollständige JSON zurück.`
+                    }
+                ],
+                response_format: { type: 'json_object' }
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'HTTP-Referer': 'http://localhost:5173',
+                    'X-Title': 'PromptFlow Character',
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        const content = response.data.choices[0].message.content;
+        return typeof content === 'string' ? JSON.parse(content) : content;
+    } catch (error) {
+        console.error('Refinement error:', error);
+        throw error;
+    }
+};
+
+export const generateCharacterPrompt = async (apiKey, attributes) => {
+    try {
+        const response = await axios.post(
+            OPENROUTER_API_URL,
+            {
+                model: 'x-ai/grok-4.1-fast',
+                messages: [
+                    {
+                        role: 'system',
+                        content: `Du bist ein professioneller Prompt Engineer. Erstelle einen detaillierten, konsistenten Character-Prompt für Bildgenerierung.
+
+Der Prompt sollte:
+1. Alle visuellen Attribute präzise und natürlich beschreiben
+2. Konsistent und für verschiedene Szenen wiederverwendbar sein
+3. Keine spezifische Pose oder Szenerie enthalten (nur den Charakter selbst)
+4. In natürlicher englischer Sprache geschrieben sein
+5. Fokus auf visuelle Details legen, die das Modell "sehen" kann
+
+Antworte mit einem JSON-Objekt:
+{
+  "prompt": "Der vollständige Character-Prompt in Englisch",
+  "summary": "Eine kurze deutsche Zusammenfassung (1-2 Sätze)"
+}`
+                    },
+                    {
+                        role: 'user',
+                        content: `Erstelle einen wiederverwendbaren Character-Prompt basierend auf diesen Attributen: ${JSON.stringify(attributes)}`
+                    }
+                ],
+                response_format: { type: 'json_object' }
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'HTTP-Referer': 'http://localhost:5173',
+                    'X-Title': 'PromptFlow Character',
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        const content = response.data.choices[0].message.content;
+        return typeof content === 'string' ? JSON.parse(content) : content;
+    } catch (error) {
+        console.error('Prompt generation error:', error);
+        throw error;
+    }
+};

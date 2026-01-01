@@ -29,3 +29,21 @@ export const savedPrompts = pgTable('saved_prompts', {
     refinedTags: jsonb('refined_tags').$type().notNull(),
     createdAt: timestamp('created_at').defaultNow().notNull(),
 });
+
+export const characters = pgTable('characters', {
+    id: serial('id').primaryKey(),
+    userId: integer('user_id').references(() => users.id).notNull(),
+    name: text('name').notNull(),
+    attributes: jsonb('attributes').$type().notNull(),
+    prompt: text('prompt'),
+    pinnedImageId: integer('pinned_image_id'),
+    createdAt: timestamp('created_at').defaultNow().notNull(),
+    updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
+export const characterImages = pgTable('character_images', {
+    id: serial('id').primaryKey(),
+    characterId: integer('character_id').references(() => characters.id).notNull(),
+    imageId: integer('image_id').references(() => galleryItems.id).notNull(),
+    isPinned: boolean('is_pinned').default(false).notNull(),
+});
