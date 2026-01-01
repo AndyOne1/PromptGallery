@@ -4,13 +4,15 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(4px);
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
-    padding: 1rem;
+    z-index: 2000;
+    padding: 2rem;
+    overflow: hidden;
+    /* Prevent background scroll if possible */
 }
 
 .modal-content {
