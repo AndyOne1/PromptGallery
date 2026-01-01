@@ -7,7 +7,7 @@ export const analyzePrompt = async (apiKey, prompt) => {
         const response = await axios.post(
             OPENROUTER_API_URL,
             {
-                model: 'x-ai/grok-2-1212',
+                model: 'x-ai/grok-4.1-fast',
                 messages: [
                     {
                         role: 'system',
@@ -43,14 +43,8 @@ export const analyzePrompt = async (apiKey, prompt) => {
         const content = response.data.choices[0].message.content;
         return typeof content === 'string' ? JSON.parse(content) : content;
     } catch (error) {
-        console.error('OpenRouter Error:', error.response?.data || error.message);
-        if (!error.response) {
-            console.warn('Network error. Using fallback metadata.');
-            return {
-                title: 'New Creation',
-                description: prompt.substring(0, 100),
-                tags: ['Image', 'Generation']
-            };
+        if (error.response) {
+            console.error('OpenRouter Error:', error.response.data);
         }
         throw error;
     }
@@ -61,7 +55,7 @@ export const generateFinalPrompt = async (apiKey, selections) => {
         const response = await axios.post(
             OPENROUTER_API_URL,
             {
-                model: 'x-ai/grok-2-1212',
+                model: 'x-ai/grok-4.1-fast',
                 messages: [
                     {
                         role: 'system',
@@ -115,14 +109,8 @@ export const generateFinalPrompt = async (apiKey, selections) => {
         const content = response.data.choices[0].message.content;
         return typeof content === 'string' ? JSON.parse(content) : content;
     } catch (error) {
-        console.error('OpenRouter Error:', error.response?.data || error.message);
-        if (!error.response) {
-            console.warn('Network error. Using fallback prompt.');
-            return {
-                title: 'New Prompt',
-                prompt: selections.customInstruction || 'A beautiful creation.',
-                refined_tags: ['Image', 'Generation']
-            };
+        if (error.response) {
+            console.error('OpenRouter Error:', error.response.data);
         }
         throw error;
     }
