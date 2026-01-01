@@ -17,7 +17,11 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete, initial
     useEffect(() => {
         if (isOpen) {
             setPrompt(initialPrompt);
+            document.body.classList.add('modal-open');
+        } else {
+            document.body.classList.remove('modal-open');
         }
+        return () => document.body.classList.remove('modal-open');
     }, [isOpen, initialPrompt]);
 
     const onDrop = useCallback(acceptedFiles => {
