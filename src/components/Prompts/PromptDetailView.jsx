@@ -3,11 +3,13 @@ import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { normalizePromptText } from '../../utils/stringUtils';
 import { useData } from '../../context/DataContext';
+import ConfirmationModal from '../UI/ConfirmationModal';
 
 export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) {
     const [copied, setCopied] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [showAllTags, setShowAllTags] = useState(false);
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const { privateImages } = useData();
 
     useEffect(() => {
@@ -117,17 +119,24 @@ export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) 
                 </div>
 
                 <footer className="modal-footer">
-                    <button className="btn-secondary text-danger" onClick={() => {
-                        if (window.confirm('Delete this prompt?')) {
-                            onDelete(prompt.id);
-                            onClose();
-                        }
-                    }}>
+                    <button className="btn-secondary text-danger" onClick={() => setIsDeleteConfirmOpen(true)}>
                         <Trash2 size={18} />
                         <span>Delete Prompt</span>
                     </button>
                     <button className="btn-primary" onClick={onClose}>Close</button>
                 </footer>
+
+                <ConfirmationModal
+                    isOpen={isDeleteConfirmOpen}
+                    onClose={() => setIsDeleteConfirmOpen(false)}
+                    onConfirm={() => {
+                        onDelete(prompt.id);
+                        onClose();
+                    }}
+                    title="Delete Prompt"
+                    message="Are you sure you want to delete this prompt? This action cannot be undone."
+                    confirmText="Delete forever"
+                />
             </div>
         </div>
     );

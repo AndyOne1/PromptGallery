@@ -6,6 +6,7 @@ import { galleryApi, promptsApi } from '../../services/api';
 import { normalizePromptText } from '../../utils/stringUtils';
 import { MessageSquare, Calendar, Clock, BookmarkPlus } from 'lucide-react';
 import { useData } from '../../context/DataContext';
+import ConfirmationModal from '../UI/ConfirmationModal';
 
 export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, user, onUpdateImage }) {
     const [copied, setCopied] = useState(false);
@@ -15,6 +16,7 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
     const [linkedPrompts, setLinkedPrompts] = useState([]);
     const [isLoadingPrompts, setIsLoadingPrompts] = useState(false);
     const [isSavingPrompt, setIsSavingPrompt] = useState(false);
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const { addPromptToCache } = useData();
     const navigate = useNavigate();
 
@@ -69,14 +71,10 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
     };
 
     const handleDelete = async () => {
-        let message = 'Are you sure you want to delete this creation?';
-        if (!image.publicId) {
-            message += '\n\nNote: This image was uploaded before Cloudinary synchronization was enabled. It will be removed from your gallery, but you must delete it manually from your Cloudinary dashboard.';
-        } else {
-            message += '\n\nThis will also automatically remove the image from Cloudinary storage.';
-        }
+        setIsDeleteConfirmOpen(true);
+    };
 
-        if (!window.confirm(message)) return;
+    const confirmDelete = async () => {
         setIsUpdating(true);
         try {
             await galleryApi.delete(image.id);
@@ -230,6 +228,17 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
                         </footer>
                     </div>
                 </div>
+                <ConfirmationModal
+                    isOpen={isDeleteConfirmOpen}
+                    onClose={() => setIsDeleteConfirmOpen(false)}
+                    onConfirm={confirmDelete}
+                    title="Delete Creation"
+                    message={!image.publicId
+                        ? 'Note: This image was uploaded before Cloudinary synchronization was enabled. It will be removed from your gallery, but you must delete it manually from your Cloudinary dashboard.'
+                        : 'Are you sure you want to delete this creation? This will also automatically remove the image from Cloudinary storage.'
+                    }
+                    confirmText="Delete forever"
+                />
             </div>
         </div>
     );

@@ -5,6 +5,7 @@ import UploadModal from '../components/Gallery/UploadModal';
 import PromptDetailView from '../components/Prompts/PromptDetailView';
 import './Prompts.css';
 import '../components/Prompts/PromptDetailView.css';
+import ConfirmationModal from '../components/UI/ConfirmationModal';
 
 import { useData } from '../context/DataContext';
 import { normalizePromptText } from '../utils/stringUtils';
@@ -17,6 +18,8 @@ export default function Prompts({ user }) {
     const [selectedPrompt, setSelectedPrompt] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [displayLimit, setDisplayLimit] = useState(10);
+    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+    const [promptToDelete, setPromptToDelete] = useState(null);
 
     useEffect(() => {
         fetchPrompts();
@@ -28,8 +31,15 @@ export default function Prompts({ user }) {
         setTimeout(() => setCopiedId(null), 2000);
     };
 
-    const deletePrompt = async (id) => {
-        if (!window.confirm('Delete this prompt forever?')) return;
+    const deletePrompt = (id) => {
+        setPromptToDelete(id);
+        setIsDeleteConfirmOpen(true);
+    };
+
+    const confirmDeletePrompt = async () => {
+        const id = promptToDelete;
+        if (!id) return;
+
         if (user) {
             try {
                 await promptsApi.delete(id);
@@ -41,6 +51,10 @@ export default function Prompts({ user }) {
             const updated = prompts.filter(p => p.id !== id);
             localStorage.setItem('generated_prompts', JSON.stringify(updated));
             removePromptFromCache(id);
+            if (selectedPrompt?.id === id) {
+                setIsDetailOpen(false);
+                setSelectedPrompt(null);
+            }
         }
     };
 
@@ -207,6 +221,17 @@ export default function Prompts({ user }) {
                     setSelectedPrompt(null);
                 }}
                 onDelete={deletePrompt}
+            />
+            <ConfirmationModal
+                isOpen={isDeleteConfirmOpen}
+                onClose={() => {
+                    setIsDeleteConfirmOpen(false);
+                    setPromptToDelete(null);
+                }}
+                onConfirm={confirmDeletePrompt}
+                title="Delete Prompt"
+                message="Are you sure you want to delete this prompt forever? This action cannot be undone."
+                confirmText="Delete forever"
             />
         </div>
     );
