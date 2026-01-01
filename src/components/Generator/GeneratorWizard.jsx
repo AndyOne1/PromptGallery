@@ -1,17 +1,12 @@
 import { useState, useEffect } from 'react';
 import { WIZARD_DATA } from '../../data/wizard';
-import { generateFinalPrompt, analyzeTemplateForWizard } from '../../services/openrouter';
+import { generateFinalPrompt } from '../../services/openrouter';
 import { ChevronDown, ChevronRight, ChevronLeft, Wand2, Check, RefreshCcw, Save, Trash2, Eye, Shield, AlertTriangle, Loader2, Hash } from 'lucide-react';
 
 const GeneratorWizard = ({ onComplete, initialData }) => {
+    const isTemplateMode = !!initialData;
     const [currentStepId, setCurrentStepId] = useState(initialData ? 'finish' : 'root');
-    const [history, setHistory] = useState(initialData ? [
-        'root', 'amateur_1_1', 'amateur_1_2', 'amateur_1_3', 'amateur_1_4',
-        'amateur_1_5', 'amateur_1_6', 'amateur_1_7', 'amateur_1_8',
-        'amateur_1_9', 'amateur_1_10', 'amateur_1_11', 'amateur_1_12',
-        'amateur_1_13', 'amateur_1_14', 'amateur_1_15', 'amateur_1_16',
-        'amateur_1_18'
-    ] : []);
+    const [history, setHistory] = useState([]);
     const [selections, setSelections] = useState({}); // { stepId: value(s) }
     const [useReference, setUseReference] = useState(false);
     const [customInstruction, setCustomInstruction] = useState('');
@@ -35,102 +30,23 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
     const currentStep = WIZARD_DATA.steps[currentStepId];
 
     useEffect(() => {
-        const analyzeIdData = async () => {
-            if (initialData && (initialData.imageUrl || initialData.originalPrompt)) {
+        const setupTemplateData = async () => {
+            if (isTemplateMode) {
                 setResult(null);
-                if (currentStepId !== 'finish') setCurrentStepId('finish');
+                setCurrentStepId('finish');
 
-                const key = localStorage.getItem('openrouter_key');
-                if (!key) return;
+                if (initialData.useReference) setUseReference(true);
 
-                setIsAnalyzing(true);
-                try {
-                    const schema = Object.keys(WIZARD_DATA.steps).reduce((acc, id) => {
-                        const step = WIZARD_DATA.steps[id];
-                        acc[id] = {
-                            question: step.question,
-                            multi_select: !!step.multi_select,
-                            sections: step.sections?.map(s => ({
-                                name: s.name,
-                                options: s.options.map(o => ({ label: o.label, value: o.value }))
-                            })),
-                            options: step.options?.map(o => ({ label: o.label, value: o.value }))
-                        };
-                        return acc;
-                    }, {});
-
-                    const mapping = await analyzeTemplateForWizard(key, {
-                        imageUrl: initialData.imageUrl,
-                        prompt: initialData.originalPrompt
-                    }, schema);
-
-                    if (mapping?.selections) {
-                        const mappedSelections = {};
-                        const foundSteps = new Set();
-
-                        Object.entries(mapping.selections).forEach(([stepId, selection]) => {
-                            const step = WIZARD_DATA.steps[stepId];
-                            if (!step) return;
-
-                            if (step.multi_select) {
-                                mappedSelections[stepId] = selection;
-                                if (selection && Object.values(selection).some(v => Array.isArray(v) && v.length > 0)) {
-                                    foundSteps.add(stepId);
-                                }
-                            } else {
-                                const val = typeof selection === 'object' ? selection.value : selection;
-                                const option = step.options?.find(o => o.value === val);
-                                if (option) {
-                                    mappedSelections[stepId] = option;
-                                    foundSteps.add(stepId);
-                                }
-                            }
-                        });
-
-                        setSelections(mappedSelections);
-
-                        // Populate history - MANDATORY CATEGORY DISPLAY
-                        // We force the amateur path for templates as it's the primary/only category currently
-                        // This ensures the user sees all 19 sections for fine-tuning.
-                        const isAmateur = !mapping.identified_category || mapping.identified_category.toLowerCase().includes('amateur');
-
-                        if (isAmateur || foundSteps.size > 0) {
-                            setHistory([
-                                'amateur_1_1', 'amateur_1_2', 'amateur_1_3', 'amateur_1_4',
-                                'amateur_1_5', 'amateur_1_6', 'amateur_1_7', 'amateur_1_8',
-                                'amateur_1_9', 'amateur_1_10', 'amateur_1_11', 'amateur_1_12',
-                                'amateur_1_13', 'amateur_1_14', 'amateur_1_15', 'amateur_1_16',
-                                'amateur_1_18'
-                            ]);
-                        } else {
-                            // If it's something entirely else, show what we found
-                            setHistory([...foundSteps]);
-                        }
-                    }
-                    setResult(null);
-                    if (initialData.useReference) setUseReference(true);
-
-                    // Force the Review screen one more time to be absolutely sure
-                    setCurrentStepId('finish');
-
-                    // Only open basic sections to keep it clean
-                    const initialOpen = ['tags'];
-                    if (initialData.originalPrompt) initialOpen.push('reference');
-                    setOpenSections(initialOpen);
-                } catch (error) {
-                    console.error('Wizard analysis failed:', error);
-                    setCurrentStepId('finish');
-                } finally {
-                    setIsAnalyzing(false);
-                }
-            } else if (initialData) {
-                setResult(null);
-                if (currentStepId !== 'finish') setCurrentStepId('finish');
+                // For template mode, we don't need heavy analysis of 19 steps anymore.
+                // We just prepare the UI for manual refinement.
+                const initialOpen = ['info', 'tags'];
+                if (initialData.originalPrompt) initialOpen.push('reference');
+                setOpenSections(initialOpen);
             }
         };
 
-        analyzeIdData();
-    }, [initialData]);
+        setupTemplateData();
+    }, [initialData, isTemplateMode]);
 
     useEffect(() => {
         localStorage.setItem('instruction_templates', JSON.stringify(templates));
@@ -282,7 +198,7 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
             return (
                 <div className="wizard-step finish-step">
                     <header className="step-header-with-status">
-                        <h3>Review & Refine</h3>
+                        <h3>{isTemplateMode ? 'Template-Refinement' : 'Review & Refine'}</h3>
                         {isAnalyzing && (
                             <div className="analyzing-badge glass animate-pulse">
                                 <Loader2 size={14} className="spin" />
@@ -360,7 +276,7 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
                             <header className="accordion-trigger" onClick={() => toggleSection('info')}>
                                 <div className="trigger-label">
                                     <Wand2 size={16} />
-                                    <span>Extra Anweisungen & Templates</span>
+                                    <span>{isTemplateMode ? 'Was möchtest du ändern?' : 'Extra Anweisungen & Templates'}</span>
                                 </div>
                                 <div className="trigger-status">
                                     {customInstruction ? <span className="status-dot active"></span> : null}
@@ -375,8 +291,8 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
                                         </button>
                                     </header>
                                     <textarea
-                                        className="instruction-input"
-                                        placeholder="z.B. 'Füge einen roten Schal hinzu'..."
+                                        className={`instruction-input ${isTemplateMode ? 'template-highlight' : ''}`}
+                                        placeholder={isTemplateMode ? "Beschreibe hier deine Änderungen (z.B. Hintergrund zu Dschungel, Kleidung zu schwarz)..." : "z.B. 'Füge einen roten Schal hinzu'..."}
                                         value={customInstruction}
                                         onChange={(e) => setCustomInstruction(e.target.value)}
                                     />
@@ -417,15 +333,15 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
                             </div>
                         </div>
 
-                        {/* 3. WIZARD STEPS REVIEW */}
-                        {history.length > 0 && (
+                        {/* 3. WIZARD STEPS REVIEW - ONLY SHOW IN REGULAR MODE OR IF HISTORY EXISTS */}
+                        {!isTemplateMode && history.length > 0 && (
                             <div className="review-steps-header">
                                 <span>Wizard Selections</span>
                                 <small>Click to adjust any step</small>
                             </div>
                         )}
 
-                        {history.map(stepId => {
+                        {!isTemplateMode && history.map(stepId => {
                             const step = WIZARD_DATA.steps[stepId];
                             if (!step) return null;
                             const sel = selections[stepId];
@@ -606,7 +522,7 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
                     </button>
 
                     <div className="wizard-actions-right">
-                        {currentStepId !== 'finish' && (
+                        {currentStepId !== 'finish' && !isTemplateMode && (
                             <button className="btn-secondary btn-skip" onClick={nextStep} disabled={isGenerating}>
                                 Skip
                             </button>
