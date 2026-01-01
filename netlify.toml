@@ -3,6 +3,10 @@
   publish = "dist"
   base = "/"
 
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["bcryptjs"]
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
