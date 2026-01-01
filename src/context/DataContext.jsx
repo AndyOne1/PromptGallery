@@ -19,9 +19,24 @@ export function DataProvider({ children, user }) {
 
     const CACHE_TIME = 5 * 60 * 1000; // 5 minutes cache
 
+    useEffect(() => {
+        // Reset fetch timestamps when user changes (login/logout)
+        setLastFetch({
+            privateImages: 0,
+            publicImages: 0,
+            prompts: 0
+        });
+        // Also clear data to avoid showing previous user's images
+        setPrivateImages([]);
+        setPrompts([]);
+    }, [user?.id]);
+
     const fetchImages = useCallback(async (view = 'private', force = false) => {
         const now = Date.now();
         const cacheKey = view === 'public' ? 'publicImages' : 'privateImages';
+
+        // Guard: Don't fetch private images if not logged in
+        if (view === 'private' && !user) return;
 
         if (!force && now - lastFetch[cacheKey] < CACHE_TIME) {
             return;
@@ -33,11 +48,12 @@ export function DataProvider({ children, user }) {
             if (view === 'public') {
                 data = await galleryApi.getPublic();
                 setPublicImages(data || []);
+                setLastFetch(prev => ({ ...prev, publicImages: now }));
             } else if (user) {
                 data = await galleryApi.getPrivate();
                 setPrivateImages(data || []);
+                setLastFetch(prev => ({ ...prev, privateImages: now }));
             }
-            setLastFetch(prev => ({ ...prev, [cacheKey]: now }));
         } catch (err) {
             console.error(`Failed to fetch ${view} images:`, err);
         } finally {
