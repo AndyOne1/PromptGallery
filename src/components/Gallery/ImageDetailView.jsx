@@ -1,5 +1,7 @@
 import { X, Copy, Check, Trash2, Wand2, Globe, Shield, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { galleryApi } from '../../services/api';
 
 export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, user, onUpdateImage }) {
     const [copied, setCopied] = useState(false);
