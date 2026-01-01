@@ -6,20 +6,25 @@ export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) 
     const [copied, setCopied] = useState(false);
     const [linkedImages, setLinkedImages] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [showAllTags, setShowAllTags] = useState(false);
 
     useEffect(() => {
-        if (isOpen && prompt) {
-            loadLinkedImages();
+        if (isOpen) {
+            document.body.classList.add('modal-open');
+            if (prompt) loadLinkedImages();
+        } else {
+            document.body.classList.remove('modal-open');
         }
+        return () => document.body.classList.remove('modal-open');
     }, [isOpen, prompt]);
 
     const loadLinkedImages = async () => {
         setIsLoading(true);
         try {
-            // Find images where prompt text matches exactly
             const allImages = await galleryApi.get();
-            const promptText = prompt.content || prompt.prompt;
-            const matches = allImages.filter(img => img.prompt === promptText);
+            const promptText = (prompt.content || prompt.prompt || '').trim();
+            const matches = allImages.filter(img => (img.prompt || '').trim() === promptText);
             setLinkedImages(matches);
         } catch (err) {
             console.error('Failed to load linked images:', err);
@@ -30,8 +35,13 @@ export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) 
 
     if (!isOpen || !prompt) return null;
 
-    const handleCopy = () => {
-        navigator.clipboard.writeText(prompt.content || prompt.prompt);
+    const fullText = prompt.content || prompt.prompt;
+    const tags = prompt.refinedTags || prompt.tags || [];
+    const displayTags = showAllTags ? tags : tags.slice(0, 10);
+
+    const handleCopy = (e) => {
+        e.stopPropagation();
+        navigator.clipboard.writeText(fullText);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
@@ -66,20 +76,26 @@ export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) 
                 <div className="modal-body">
                     <section className="detail-segment">
                         <label>Prompt Content</label>
-                        <div className="prompt-display-large glass">
-                            <p>{prompt.content || prompt.prompt}</p>
+                        <div className={`prompt-display-large glass ${isExpanded ? 'expanded' : 'truncated'}`} onClick={() => setIsExpanded(!isExpanded)}>
+                            <p>{fullText}</p>
                             <button className="btn-copy-float" onClick={handleCopy}>
                                 {copied ? <Check size={18} /> : <Copy size={18} />}
                             </button>
+                            {!isExpanded && fullText.length > 200 && <div className="expand-overlay">Click to expand</div>}
                         </div>
                     </section>
 
                     <section className="detail-segment">
                         <label>Refined Tags</label>
                         <div className="tag-cloud">
-                            {(prompt.refinedTags || prompt.tags)?.map(tag => (
+                            {displayTags.map(tag => (
                                 <span key={tag} className="tag">{tag}</span>
                             ))}
+                            {tags.length > 10 && !showAllTags && (
+                                <button className="tag-more" onClick={() => setShowAllTags(true)}>
+                                    +{tags.length - 10} more
+                                </button>
+                            )}
                         </div>
                     </section>
 

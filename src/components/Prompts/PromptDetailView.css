@@ -10,6 +10,50 @@
     line-height: 1.6;
     font-size: 1.1rem;
     white-space: pre-wrap;
+    cursor: pointer;
+    transition: max-height 0.4s ease;
+}
+
+.prompt-display-large.truncated {
+    max-height: 150px;
+    overflow: hidden;
+}
+
+.prompt-display-large.expanded {
+    max-height: 1000px;
+}
+
+.expand-overlay {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.6), transparent);
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--accent-primary);
+    font-weight: 600;
+}
+
+.tag-more {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px dashed var(--glass-border);
+    color: var(--text-dim);
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tag-more:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-main);
+    border-color: var(--accent-primary);
 }
 
 .tag-cloud {

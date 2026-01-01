@@ -1,12 +1,19 @@
 import { X, Copy, Check, Trash2, Wand2, Globe, Shield, Loader2 } from 'lucide-react';
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { galleryApi } from '../../services/api';
+import { useState, useEffect } from 'react';
 
 export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, user, onUpdateImage }) {
     const [copied, setCopied] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        if (isOpen) {
+            document.body.classList.add('modal-open');
+        } else {
+            document.body.classList.remove('modal-open');
+        }
+        return () => document.body.classList.remove('modal-open');
+    }, [isOpen]);
 
     if (!isOpen || !image) return null;
 
