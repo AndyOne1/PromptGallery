@@ -48,7 +48,11 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
         }
     };
 
-    const handleMultiSelect = (stepId, sectionName, optionValue, isSelected) => {
+    const handleMultiSelect = (stepId, sectionName, optionValue, isSelected, option) => {
+        if (option?.is_reference_toggle) {
+            setUseReference(isSelected);
+        }
+
         setSelections(prev => {
             const currentStepSelections = prev[stepId] || {};
             const sectionSelections = currentStepSelections[sectionName] || [];
@@ -284,7 +288,7 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
                                         <button
                                             key={opt.value}
                                             className={`chip ${isSelected ? 'active' : ''}`}
-                                            onClick={() => handleMultiSelect(currentStepId, section.name, opt.value, !isSelected)}
+                                            onClick={() => handleMultiSelect(currentStepId, section.name, opt.value, !isSelected, opt)}
                                         >
                                             {opt.label}
                                         </button>
@@ -328,7 +332,7 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
         <div className="wizard-container glass animate-fade-in">
             {currentStepId !== 'result' && (
                 <div className="wizard-progress">
-                    <div className="progress-bar" style={{ width: `${(history.length / 15) * 100}%` }}></div>
+                    <div className="progress-bar" style={{ width: `${Math.min((history.length / 12) * 100, 100)}%` }}></div>
                     <span className="step-count">Step {history.length + 1}</span>
                 </div>
             )}
