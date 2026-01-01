@@ -12,7 +12,7 @@ export const analyzePrompt = async (apiKey, prompt) => {
                     {
                         role: 'system',
                         content: `You are an AI assistant specialized in analyzing image prompts. 
-            Return ONLY a JSON object with "tags" (array of strings) and "description" (string).
+            Return ONLY a JSON object with "tags" (array of strings), "title" (string), and "description" (string).
             
             Tagging Rules:
             1. Be concise and hierarchical. Avoid redundant or micro-tags.
@@ -24,7 +24,8 @@ export const analyzePrompt = async (apiKey, prompt) => {
                - Environment: (e.g., Snowy forest, Neon city)
                - Details: (e.g., Glasses, Leather jacket, Golden hour)
             4. Max 6-8 total tags.
-            5. "description" should be a catchy 1-sentence summary.`
+            5. "title" should be a punchy 3-5 word summary (e.g., "Candid Mirror Selfie").
+            6. "description" should be a more detailed 1-sentence summary.`
                     },
                     {
                         role: 'user',

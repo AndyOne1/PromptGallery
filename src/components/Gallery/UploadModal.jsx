@@ -64,7 +64,9 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete, initial
             let analysis = await analyzePrompt(openRouterKey, prompt);
 
             // If we have initial tags (from saved prompts), we prefer them but keep the AI's description
+            // If we have initial tags (from saved prompts), we prefer them but keep the AI's title/description
             const finalTags = initialTags.length > 0 ? initialTags : analysis.tags;
+            const finalTitle = analysis.title;
             const finalDescription = analysis.description;
 
             const uploadResults = [];
@@ -87,6 +89,7 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete, initial
                     url: cloudData.secure_url,
                     prompt: prompt,
                     tags: finalTags,
+                    title: finalTitle,
                     description: finalDescription,
                     isPublic: isPublic
                 });

@@ -7,6 +7,8 @@ import { galleryApi } from '../../services/api';
 export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, user, onUpdateImage }) {
     const [copied, setCopied] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [showAllTags, setShowAllTags] = useState(false);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -21,6 +23,8 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
     if (!isOpen || !image) return null;
 
     const isOwner = user && image.userId === user.id;
+    const tags = image.tags || [];
+    const displayTags = showAllTags ? tags : tags.slice(0, 10);
 
     const handleCopy = () => {
         navigator.clipboard.writeText(image.prompt);
@@ -78,7 +82,8 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
                     <div className="detail-info-section">
                         <header className="detail-header">
                             <div className="flex-col">
-                                <h2 className="title-gradient">{image.description}</h2>
+                                <h2 className="title-gradient">{image.title || image.description}</h2>
+                                {image.title && <p className="image-description-sub">{image.description}</p>}
                                 {isOwner && (
                                     <span className={`visibility-badge ${image.isPublic ? 'public' : 'private'}`}>
                                         {image.isPublic ? <Globe size={14} /> : <Shield size={14} />}
@@ -91,26 +96,34 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
 
                         <div className="detail-body">
                             <section className="detail-segment">
-                                <label>Prompt</label>
-                                <div className="prompt-display glass">
+                                <label>Prompt used for this image</label>
+                                <div className={`prompt-display glass ${isExpanded ? 'expanded' : 'truncated'}`} onClick={() => setIsExpanded(!isExpanded)}>
                                     <p>{image.prompt}</p>
                                     <button className="btn-copy-float" onClick={handleCopy}>
                                         {copied ? <Check size={18} /> : <Copy size={18} />}
                                     </button>
+                                    {!isExpanded && image.prompt.length > 200 && <div className="expand-overlay-detail">Click to expand</div>}
                                 </div>
                             </section>
 
                             <section className="detail-segment">
-                                <label>Tags (Click X to remove)</label>
+                                <label>Refined Tags</label>
                                 <div className="detail-tags">
-                                    {image.tags.map((tag, idx) => (
+                                    {displayTags.map((tag, idx) => (
                                         <span key={idx} className="tag-closable">
                                             {tag}
-                                            <button className="tag-remove" onClick={() => onDeleteTag(image.id, tag)}>
-                                                <X size={12} />
-                                            </button>
+                                            {isOwner && (
+                                                <button className="tag-remove" onClick={() => onDeleteTag(image.id, tag)}>
+                                                    <X size={12} />
+                                                </button>
+                                            )}
                                         </span>
                                     ))}
+                                    {tags.length > 10 && !showAllTags && (
+                                        <button className="tag-more-btn" onClick={() => setShowAllTags(true)}>
+                                            +{tags.length - 10} more
+                                        </button>
+                                    )}
                                 </div>
                             </section>
                         </div>
@@ -142,4 +155,7 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
     );
 
     return createPortal(modalContent, document.getElementById('modal-root'));
+}
+
+return createPortal(modalContent, document.getElementById('modal-root'));
 }

@@ -41,6 +41,7 @@ export const handler = async (event) => {
                         userId: user.userId,
                         url: item.url,
                         prompt: item.prompt,
+                        title: item.title,
                         description: item.description,
                         tags: item.tags || [],
                         isPublic: !!item.isPublic
@@ -54,6 +55,7 @@ export const handler = async (event) => {
                 userId: user.userId,
                 url: body.url,
                 prompt: body.prompt,
+                title: body.title,
                 description: body.description,
                 tags: body.tags || [],
                 isPublic: !!body.isPublic
