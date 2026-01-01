@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { WIZARD_DATA } from '../../data/wizard';
 import { generateFinalPrompt, analyzeImageForWizard } from '../../services/openrouter';
 import { ChevronDown, ChevronRight, ChevronLeft, Wand2, Check, RefreshCcw, Save, Trash2, Eye, Shield, AlertTriangle, Loader2 } from 'lucide-react';
