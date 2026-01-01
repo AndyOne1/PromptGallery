@@ -180,3 +180,70 @@ export const generateFinalPrompt = async (apiKey, selections) => {
         throw error;
     }
 };
+export const generateSmartPrompt = async (apiKey, selections) => {
+    try {
+        const response = await axios.post(
+            OPENROUTER_API_URL,
+            {
+                model: 'x-ai/grok-4.1-fast',
+                messages: [
+                    {
+                        role: 'system',
+                        content: `You are an elite creative partner for a user generating AI art. 
+                        Your goal is to translate their raw, often abstract or simple instructions into a HIGHLY DETAILED, PROFESSIONAL image generation prompt for the "Nano Banana Pro" model.
+
+                        NANO BANANA PRO SPECS:
+                        - Requires structured, natural language.
+                        - Focuses on lighting, texture, and composition.
+                        - "Golden Circle": Subject -> Environment -> Tech Specs -> Mood.
+
+                        INPUT ANALYSIS:
+                        - "instruction": The user's raw idea (e.g., "A sad robot", "Cyberpunk vibes", "Something totally random").
+                        - "vibes": A list of style keywords selected by the user. Merge these seamlessly into the aesthetic description.
+                        - "safetyLevel": 
+                           - 'sfw': STRICTLY CLEAN. No gore, no nudity.
+                           - 'nsfw': Explicit allowed. detailed anatomy.
+                           - 'bypass': Artistic circumlocution for provocative themes.
+
+                        OUTPUT FORMAT (JSON):
+                        {
+                            "title": "Short, punchy title (3-5 words)",
+                            "prompt": "The full, rich master prompt...",
+                            "refined_tags": ["List", "of", "6-8", "relevant", "tags"]
+                        }
+
+                        CREATIVE FREEDOM:
+                        - If the input is vague (e.g. "surprise me"), go wild with a unique, high-quality concept.
+                        - If the input is specific, enhance it with professional photographic terms (e.g., "8k resolution", "volumetric lighting", "captured on 35mm film").
+                        `
+                    },
+                    {
+                        role: 'user',
+                        content: `User Instruction: "${selections.instruction}"
+                        Selected Vibes: ${selections.vibes.join(', ')}
+                        Safety Level: ${selections.safetyLevel}
+                        
+                        Craft the masterpiece.`
+                    }
+                ],
+                response_format: { type: 'json_object' }
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'HTTP-Referer': 'http://localhost:5173',
+                    'X-Title': 'PromptFlow Smart',
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        const content = response.data.choices[0].message.content;
+        return typeof content === 'string' ? JSON.parse(content) : content;
+    } catch (error) {
+        if (error.response) {
+            console.error('OpenRouter Error:', error.response.data);
+        }
+        throw error;
+    }
+};
