@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { galleryApi, promptsApi } from '../services/api';
 
 const DataContext = createContext();
