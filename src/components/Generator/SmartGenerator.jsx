@@ -11,6 +11,8 @@ export default function SmartGenerator({ onComplete }) {
     const [instruction, setInstruction] = useState('');
     const [selectedVibes, setSelectedVibes] = useState([]);
     const [safetyLevel, setSafetyLevel] = useState('sfw');
+    const [useReference, setUseReference] = useState(false);
+    const [referenceGender, setReferenceGender] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const textareaRef = useRef(null);
 
@@ -57,7 +59,9 @@ export default function SmartGenerator({ onComplete }) {
             const result = await generateSmartPrompt(key, {
                 instruction,
                 vibes: selectedVibes,
-                safetyLevel
+                safetyLevel,
+                useReference,
+                referenceGender
             });
             onComplete(result);
         } catch (error) {
@@ -102,6 +106,40 @@ export default function SmartGenerator({ onComplete }) {
             </div>
 
             <div className="smart-controls">
+                <div className="control-section">
+                    <label>Reference Image</label>
+                    <div className="flex-col gap-3">
+                        <label className="toggle-label glass">
+                            <input
+                                type="checkbox"
+                                checked={useReference}
+                                onChange={(e) => setUseReference(e.target.checked)}
+                            />
+                            <span>Use Reference Image in final generation</span>
+                        </label>
+
+                        {useReference && (
+                            <div className="gender-selector glass animate-fade-in">
+                                <span className="text-sm text-dim mb-2 block">Subject Gender in Reference:</span>
+                                <div className="flex-row gap-2">
+                                    <button
+                                        className={`chip small ${referenceGender === 'man' ? 'active' : ''}`}
+                                        onClick={() => setReferenceGender('man')}
+                                    >
+                                        Man
+                                    </button>
+                                    <button
+                                        className={`chip small ${referenceGender === 'woman' ? 'active' : ''}`}
+                                        onClick={() => setReferenceGender('woman')}
+                                    >
+                                        Woman
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
                 <div className="control-section">
                     <label>Vibe Modifiers</label>
                     <div className="vibe-scroll">

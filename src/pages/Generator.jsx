@@ -87,8 +87,8 @@ export default function Generator({ user }) {
                         <Wand2 size={20} />
                         Launch Setup Wizard
                     </button>
-                    <button className="btn-secondary large" onClick={() => setMode('smart')}>
-                        <Sparkles size={20} className="text-accent" />
+                    <button className="btn-primary large" onClick={() => setMode('smart')}>
+                        <Sparkles size={20} />
                         Tell AI what you want
                     </button>
                 </div>

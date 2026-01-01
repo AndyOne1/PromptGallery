@@ -213,8 +213,11 @@ export const generateSmartPrompt = async (apiKey, selections) => {
                         }
 
                         CREATIVE FREEDOM:
-                        - If the input is vague (e.g. "surprise me"), go wild with a unique, high-quality concept.
                         - If the input is specific, enhance it with professional photographic terms (e.g., "8k resolution", "volumetric lighting", "captured on 35mm film").
+                        
+                        REFERENCE IMAGE CONSTRAINTS:
+                        ${selections.useReference ? `- CRITICAL: The user has provided a reference image. You must output a prompt that specifically instructs the model to MATCH the reference image's subject, composition, and style exactly. Do not hallucinate new features.` : ''}
+                        ${selections.referenceGender ? `- The subject in the reference image is a ${selections.referenceGender.toUpperCase()}. Ensure the prompt reflects this.` : ''}
                         `
                     },
                     {
@@ -222,6 +225,8 @@ export const generateSmartPrompt = async (apiKey, selections) => {
                         content: `User Instruction: "${selections.instruction}"
                         Selected Vibes: ${selections.vibes.join(', ')}
                         Safety Level: ${selections.safetyLevel}
+                        ${selections.useReference ? `[x] Use Reference Image (Maintain consistency)` : ''}
+                        ${selections.referenceGender ? `[x] Reference Subject Gender: ${selections.referenceGender}` : ''}
                         
                         Craft the masterpiece.`
                     }
