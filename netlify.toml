@@ -3,6 +3,9 @@
   publish = "dist"
   base = "/"
 
+[context.staging]
+  command = "npm run build"
+
 [functions]
   node_bundler = "esbuild"
   external_node_modules = ["bcryptjs"]
