@@ -127,10 +127,12 @@ export const handler = async (event) => {
             const apiSecret = process.env.CLOUDINARY_API_SECRET;
 
             if (cloudName && apiKey && apiSecret) {
+                console.log(`Cloudinary deletion starting for ${itemsToDelete.length} items`);
                 const crypto = await import('crypto');
 
                 for (const item of itemsToDelete) {
                     if (item.publicId) {
+                        console.log(`Deleting from Cloudinary: ${item.publicId}`);
                         try {
                             const timestamp = Math.round((new Date()).getTime() / 1000);
                             const signatureData = `public_id=${item.publicId}&timestamp=${timestamp}${apiSecret}`;
@@ -142,15 +144,18 @@ export const handler = async (event) => {
                             formData.append('api_key', apiKey);
                             formData.append('signature', signature);
 
-                            await axios.post(
-                                `https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`,
-                                formData.toString()
-                            );
+                            const cloudUrl = `https://api.cloudinary.com/v1_1/${cloudName}/image/destroy`;
+                            const cloudRes = await axios.post(cloudUrl, formData.toString());
+                            console.log(`Cloudinary response for ${item.publicId}:`, cloudRes.data);
                         } catch (err) {
-                            console.error(`Cloudinary Deletion Error for ${item.publicId}:`, err);
+                            console.error(`Cloudinary Deletion Error for ${item.publicId}:`, err.response?.data || err.message);
                         }
+                    } else {
+                        console.log(`Skipping Cloudinary deletion: No publicId for item ${item.id}`);
                     }
                 }
+            } else {
+                console.warn('Cloudinary deletion skipped: Missing credentials (API_KEY or API_SECRET or CLOUD_NAME)');
             }
 
             return { statusCode: 200, headers, body: JSON.stringify({ success: true, count: itemsToDelete.length }) };

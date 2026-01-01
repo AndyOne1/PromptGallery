@@ -167,6 +167,7 @@ export default function Gallery({ user }) {
                                     onClick={() => handleCardClick(img)}
                                 >
                                     <div className="card-image-wrap">
+                                        <img src={img.url} alt={img.description} />
                                         {isSelectionMode && (
                                             <div className="selection-overlay">
                                                 <div className="selection-checkbox">
@@ -174,7 +175,6 @@ export default function Gallery({ user }) {
                                                 </div>
                                             </div>
                                         )}
-                                        <img src={img.url} alt={img.description} />
                                         <div className="card-overlay">
                                             <button className="btn-copy" onClick={(e) => copyPrompt(e, img.prompt, img.id)}>
                                                 {copiedId === img.id ? <Check size={16} /> : <Copy size={16} />}
