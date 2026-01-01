@@ -1,7 +1,6 @@
 .wizard-container {
     max-width: 800px;
     margin: 0 auto;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
 }
@@ -38,9 +37,8 @@
     flex-direction: column;
     gap: 0.75rem;
     margin-top: 1rem;
-    max-height: 500px;
-    overflow-y: auto;
     padding-right: 0.5rem;
+    padding-bottom: 1.5rem;
 }
 
 .accordion-row {

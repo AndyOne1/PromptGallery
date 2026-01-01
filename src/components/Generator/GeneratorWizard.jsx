@@ -504,7 +504,7 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
 
     return (
         <div className="wizard-container glass animate-fade-in">
-            {currentStepId !== 'result' && (
+            {currentStepId !== 'result' && !isTemplateMode && (
                 <div className="wizard-progress">
                     <div className="progress-bar" style={{ width: `${Math.min((history.length / 12) * 100, 100)}%` }}></div>
                     <span className="step-count">Step {history.length + 1}</span>
