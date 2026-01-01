@@ -6,7 +6,7 @@ import { ChevronDown, ChevronRight, ChevronLeft, Wand2, Check, RefreshCcw, Save,
 const GeneratorWizard = ({ onComplete, initialData }) => {
     const [currentStepId, setCurrentStepId] = useState(initialData ? 'finish' : 'root');
     const [history, setHistory] = useState(initialData ? [
-        'amateur_1_1', 'amateur_1_2', 'amateur_1_3', 'amateur_1_4',
+        'root', 'amateur_1_1', 'amateur_1_2', 'amateur_1_3', 'amateur_1_4',
         'amateur_1_5', 'amateur_1_6', 'amateur_1_7', 'amateur_1_8',
         'amateur_1_9', 'amateur_1_10', 'amateur_1_11', 'amateur_1_12',
         'amateur_1_13', 'amateur_1_14', 'amateur_1_15', 'amateur_1_16',
@@ -108,14 +108,18 @@ const GeneratorWizard = ({ onComplete, initialData }) => {
                         }
                     }
                     setResult(null);
-                    setCurrentStepId('finish');
                     if (initialData.useReference) setUseReference(true);
-                    // Only open the reference and tags by default to show what was found
+
+                    // Force the Review screen one more time to be absolutely sure
+                    setCurrentStepId('finish');
+
+                    // Only open basic sections to keep it clean
                     const initialOpen = ['tags'];
                     if (initialData.originalPrompt) initialOpen.push('reference');
                     setOpenSections(initialOpen);
                 } catch (error) {
                     console.error('Wizard analysis failed:', error);
+                    setCurrentStepId('finish');
                 } finally {
                     setIsAnalyzing(false);
                 }

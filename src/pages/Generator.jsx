@@ -65,7 +65,7 @@ export default function Generator({ user }) {
                 </div>
             ) : (
                 <GeneratorWizard
-                    key={initialSelections ? (initialSelections.imageUrl || initialSelections.originalPrompt || 'template') : 'new'}
+                    key={JSON.stringify(initialSelections || 'new-wizard')}
                     onComplete={handleComplete}
                     initialData={initialSelections}
                 />
