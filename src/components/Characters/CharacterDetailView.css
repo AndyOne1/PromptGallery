@@ -670,3 +670,18 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
+.template-btn.selected {
+    background: rgba(139, 92, 246, 0.2);
+    border-color: var(--accent-primary);
+    color: var(--text-main);
+}
+
+.template-check {
+    color: var(--accent-primary);
+    flex-shrink: 0;
+}
+
+.mt-2 {
+    margin-top: 0.5rem;
+}

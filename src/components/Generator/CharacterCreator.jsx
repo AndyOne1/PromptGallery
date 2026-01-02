@@ -87,14 +87,21 @@ export default function CharacterCreator({ onComplete, user, initialMode = 'text
         }
         if (!uploadedImage) return;
 
+        const cloudName = localStorage.getItem('cloudinary_name');
+        const uploadPreset = localStorage.getItem('cloudinary_preset');
+        if (!cloudName || !uploadPreset) {
+            setError('Bitte hinterlege deine Cloudinary-Einstellungen (Cloud Name und Upload Preset) in den Einstellungen.');
+            return;
+        }
+
         setIsLoading(true);
         setError(null);
         try {
             // Upload to Cloudinary first
-            const cloudinaryUrl = await uploadToCloudinary(uploadedImage);
+            const cloudinaryData = await uploadToCloudinary(uploadedImage, cloudName, uploadPreset);
 
             // Analyze with vision model
-            const result = await analyzeImageForCharacter(key, cloudinaryUrl);
+            const result = await analyzeImageForCharacter(key, cloudinaryData.secure_url);
             setAttributes(result);
             setPhase('refining');
         } catch (err) {

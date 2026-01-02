@@ -18,36 +18,39 @@ const ATTRIBUTE_LABELS = {
     accessories: 'Accessoires', distinguishingMarks: 'Besondere Merkmale'
 };
 
+// Base realism instruction that will be prepended to all template prompts
+const REALISM_INSTRUCTION = 'Ultra-realistic photograph of a real human. NOT CGI, NOT 3D render, NOT animation, NOT illustration. Professional photography, high resolution, photorealistic.';
+
 const REFERENCE_TEMPLATES = [
     {
         id: 'portrait-front',
         label: 'Portrait (Front)',
         icon: '👤',
-        prompt: 'Close-up portrait photograph, front view, facing camera directly. Studio lighting, neutral background. Ultra-realistic photograph, NOT CGI, NOT 3D render, NOT animation, NOT illustration. Professional photography, high resolution, photorealistic.'
+        prompt: 'Close-up portrait photograph, front view, facing camera directly. Studio lighting, neutral background.'
     },
     {
         id: 'portrait-side',
         label: 'Portrait (Seite)',
         icon: '👤',
-        prompt: 'Close-up portrait photograph, side profile view. Studio lighting, neutral background. Ultra-realistic photograph, NOT CGI, NOT 3D render, NOT animation, NOT illustration. Professional photography, high resolution, photorealistic.'
+        prompt: 'Close-up portrait photograph, side profile view. Studio lighting, neutral background.'
     },
     {
         id: 'fullbody-front',
         label: 'Ganzkörper (Front)',
         icon: '🧍',
-        prompt: 'Full body photograph, front view, standing pose. Studio lighting, neutral background. Ultra-realistic photograph, NOT CGI, NOT 3D render, NOT animation, NOT illustration. Professional photography, high resolution, photorealistic, full length shot.'
+        prompt: 'Full body photograph, front view, standing pose. Studio lighting, neutral background, full length shot.'
     },
     {
         id: 'fullbody-side',
         label: 'Ganzkörper (Seite)',
         icon: '🧍',
-        prompt: 'Full body photograph, side view, standing pose. Studio lighting, neutral background. Ultra-realistic photograph, NOT CGI, NOT 3D render, NOT animation, NOT illustration. Professional photography, high resolution, photorealistic, full length shot.'
+        prompt: 'Full body photograph, side view, standing pose. Studio lighting, neutral background, full length shot.'
     },
     {
         id: 'character-sheet',
         label: 'Character Sheet',
         icon: '📋',
-        prompt: 'Professional character reference sheet with multiple views: front view, side profile, and back view. Clean white background, consistent lighting across all views. Ultra-realistic photograph, NOT CGI, NOT 3D render, NOT animation, NOT illustration. Professional photography, high resolution, photorealistic reference sheet for production use.'
+        prompt: 'Professional character reference sheet with multiple views: front view, side profile, and back view. Clean white background, consistent lighting across all views, reference sheet for production use.'
     }
 ];
 
@@ -87,6 +90,7 @@ export default function CharacterDetailView({
     const [galleryImages, setGalleryImages] = useState([]);
     const [isLoadingGallery, setIsLoadingGallery] = useState(false);
     const [selectedDetailImage, setSelectedDetailImage] = useState(null);
+    const [selectedTemplates, setSelectedTemplates] = useState([]);
 
     const { updateImageInCache, removeImageFromCache } = useData();
 
@@ -158,6 +162,23 @@ export default function CharacterDetailView({
         }
     };
 
+    const toggleTemplate = (template) => {
+        setSelectedTemplates(prev => {
+            const exists = prev.find(t => t.id === template.id);
+            if (exists) {
+                return prev.filter(t => t.id !== template.id);
+            } else {
+                return [...prev, template];
+            }
+        });
+    };
+
+    const applySelectedTemplates = () => {
+        if (selectedTemplates.length === 0) return;
+        const combinedPrompts = selectedTemplates.map(t => t.prompt).join(' AND ');
+        setInstruction(combinedPrompts);
+    };
+
     const handleCopy = (text) => {
         navigator.clipboard.writeText(text);
         setCopiedId('prompt');
@@ -174,8 +195,18 @@ export default function CharacterDetailView({
 
         setIsGenerating(true);
         try {
+            // Prepend realism instruction if templates are selected (detected by common template keywords)
+            const hasTemplateContent = selectedTemplates.length > 0 ||
+                instruction.includes('portrait') ||
+                instruction.includes('full body') ||
+                instruction.includes('reference sheet');
+
+            const finalInstruction = hasTemplateContent
+                ? `${REALISM_INSTRUCTION}\n\n${instruction}`
+                : instruction;
+
             const result = await generateSmartPrompt(key, {
-                instruction: `Character: ${character.prompt}\n\nScene Request: ${instruction}`,
+                instruction: `Character: ${character.prompt}\n\nScene Request: ${finalInstruction}`,
                 vibes: [],
                 safetyLevel: 'sfw',
                 useReference: false,
@@ -192,6 +223,7 @@ export default function CharacterDetailView({
             }
 
             setInstruction('');
+            setSelectedTemplates([]);
         } catch (err) {
             alert('Fehler: ' + err.message);
         } finally {
@@ -323,20 +355,34 @@ export default function CharacterDetailView({
 
                                         {/* Reference Image Templates */}
                                         <div className="template-section">
-                                            <label className="template-label">Schnell-Templates für Referenzbilder</label>
+                                            <label className="template-label">Schnell-Templates für Referenzbilder (mehrere auswählbar)</label>
                                             <div className="template-grid">
-                                                {REFERENCE_TEMPLATES.map(template => (
-                                                    <button
-                                                        key={template.id}
-                                                        className="template-btn glass"
-                                                        onClick={() => setInstruction(template.prompt)}
-                                                        disabled={isGenerating}
-                                                    >
-                                                        <span className="template-icon">{template.icon}</span>
-                                                        <span className="template-name">{template.label}</span>
-                                                    </button>
-                                                ))}
+                                                {REFERENCE_TEMPLATES.map(template => {
+                                                    const isSelected = selectedTemplates.some(t => t.id === template.id);
+                                                    return (
+                                                        <button
+                                                            key={template.id}
+                                                            className={`template-btn glass ${isSelected ? 'selected' : ''}`}
+                                                            onClick={() => toggleTemplate(template)}
+                                                            disabled={isGenerating}
+                                                        >
+                                                            <span className="template-icon">{template.icon}</span>
+                                                            <span className="template-name">{template.label}</span>
+                                                            {isSelected && <Check size={14} className="template-check" />}
+                                                        </button>
+                                                    );
+                                                })}
                                             </div>
+                                            {selectedTemplates.length > 0 && (
+                                                <button
+                                                    className="btn-secondary small mt-2"
+                                                    onClick={applySelectedTemplates}
+                                                    disabled={isGenerating}
+                                                >
+                                                    <Plus size={14} />
+                                                    <span>Auswahl anwenden ({selectedTemplates.length})</span>
+                                                </button>
+                                            )}
                                         </div>
 
                                         <textarea
