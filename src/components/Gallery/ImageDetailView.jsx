@@ -1,4 +1,4 @@
-import { X, Copy, Check, Trash2, Wand2, Globe, Shield, Loader2, User } from 'lucide-react';
+import { X, Copy, Check, Trash2, Wand2, Globe, Shield, Loader2, User, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
@@ -8,7 +8,7 @@ import { MessageSquare, Calendar, Clock, BookmarkPlus } from 'lucide-react';
 import { useData } from '../../context/DataContext';
 import ConfirmationModal from '../UI/ConfirmationModal';
 
-export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, user, onUpdateImage }) {
+export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, user, onUpdateImage, seriesImages = [] }) {
     const [copied, setCopied] = useState(false);
     const [isUpdating, setIsUpdating] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -21,6 +21,30 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
     const [editedTitle, setEditedTitle] = useState('');
     const { addPromptToCache, updateImageInCache, privateImages } = useData();
     const navigate = useNavigate();
+
+    // Series navigation state
+    const [currentSeriesIndex, setCurrentSeriesIndex] = useState(0);
+    const hasSeries = seriesImages.length > 1;
+    const displayedImage = hasSeries ? seriesImages[currentSeriesIndex] : image;
+
+    // Reset index when image changes
+    useEffect(() => {
+        setCurrentSeriesIndex(0);
+    }, [image?.id]);
+
+    // Keyboard navigation
+    useEffect(() => {
+        if (!isOpen || !hasSeries) return;
+        const handleKeyDown = (e) => {
+            if (e.key === 'ArrowLeft' && currentSeriesIndex > 0) {
+                setCurrentSeriesIndex(prev => prev - 1);
+            } else if (e.key === 'ArrowRight' && currentSeriesIndex < seriesImages.length - 1) {
+                setCurrentSeriesIndex(prev => prev + 1);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen, hasSeries, currentSeriesIndex, seriesImages.length]);
 
     useEffect(() => {
         if (isOpen) {
@@ -50,12 +74,12 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
 
     if (!isOpen || !image) return null;
 
-    const isOwner = user && image.userId === user.id;
-    const tags = image.tags || [];
+    const isOwner = user && displayedImage.userId === user.id;
+    const tags = displayedImage.tags || [];
     const displayTags = showAllTags ? tags : tags.slice(0, 10);
 
     const handleCopy = () => {
-        navigator.clipboard.writeText(image.prompt);
+        navigator.clipboard.writeText(displayedImage.prompt);
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);
     };
@@ -63,7 +87,7 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
     const handleTogglePublic = async () => {
         setIsUpdating(true);
         try {
-            const updated = await galleryApi.togglePublic(image.id, !image.isPublic);
+            const updated = await galleryApi.togglePublic(displayedImage.id, !displayedImage.isPublic);
             onUpdateImage(updated);
         } catch (err) {
             alert('Failed to update visibility');
@@ -79,9 +103,9 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
     const confirmDelete = async () => {
         setIsUpdating(true);
         try {
-            await galleryApi.delete(image.id);
+            await galleryApi.delete(displayedImage.id);
             onClose();
-            onUpdateImage(null, image.id); // null image, but provide ID to remove from list
+            onUpdateImage(null, displayedImage.id);
         } catch (err) {
             alert('Failed to delete image');
             setIsUpdating(false);
@@ -90,12 +114,11 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
 
     const handleCreateSimilar = () => {
         const data = {
-            imageUrl: image.url,
-            originalPrompt: image.prompt,
-            category: image.tags[0] || '',
-            tags: image.tags
+            imageUrl: displayedImage.url,
+            originalPrompt: displayedImage.prompt,
+            category: displayedImage.tags[0] || '',
+            tags: displayedImage.tags
         };
-        // Persist to localStorage as backup for state transfer
         localStorage.setItem('pending_template', JSON.stringify(data));
 
         navigate('/generator', {
@@ -106,12 +129,11 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
     const handleSaveTitle = async () => {
         if (!editedTitle.trim()) return;
         try {
-            const updated = await galleryApi.update(image.id, { title: editedTitle });
+            const updated = await galleryApi.update(displayedImage.id, { title: editedTitle });
             onUpdateImage(updated);
             setIsEditingTitle(false);
 
-            // Sync with other images with same prompt?
-            const normalizedPrompt = normalizePromptText(image.prompt);
+            const normalizedPrompt = normalizePromptText(displayedImage.prompt);
             const otherImages = privateImages.filter(img =>
                 img.id !== image.id && normalizePromptText(img.prompt) === normalizedPrompt
             );
@@ -137,7 +159,40 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
             <div className="detail-modal glass animate-fade-in" onClick={e => e.stopPropagation()}>
                 <div className="detail-grid">
                     <div className="detail-image-section">
-                        <img src={image.url} alt={image.description} className="detail-main-image" />
+                        {hasSeries && (
+                            <button
+                                className="series-nav-arrow left"
+                                onClick={() => setCurrentSeriesIndex(prev => prev - 1)}
+                                disabled={currentSeriesIndex === 0}
+                            >
+                                <ChevronLeft size={32} />
+                            </button>
+                        )}
+                        <div className="series-image-container">
+                            <img src={displayedImage.url} alt={displayedImage.description} className="detail-main-image" />
+                            {hasSeries && (
+                                <div className="series-thumbnail-strip">
+                                    {seriesImages.map((img, idx) => (
+                                        <button
+                                            key={img.id}
+                                            className={`series-thumbnail ${idx === currentSeriesIndex ? 'active' : ''}`}
+                                            onClick={() => setCurrentSeriesIndex(idx)}
+                                        >
+                                            <img src={img.url} alt={`Series ${idx + 1}`} />
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                        {hasSeries && (
+                            <button
+                                className="series-nav-arrow right"
+                                onClick={() => setCurrentSeriesIndex(prev => prev + 1)}
+                                disabled={currentSeriesIndex === seriesImages.length - 1}
+                            >
+                                <ChevronRight size={32} />
+                            </button>
+                        )}
                     </div>
 
                     <div className="detail-info-section">
@@ -160,28 +215,28 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
                                     <>
                                         <h2 className="title-gradient clickable" onClick={() => {
                                             if (isOwner) {
-                                                setEditedTitle(image.title || image.description);
+                                                setEditedTitle(displayedImage.title || displayedImage.description);
                                                 setIsEditingTitle(true);
                                             }
-                                        }} title={isOwner ? "Click to rename" : ""}>{image.title || image.description}</h2>
-                                        {image.title && <p className="image-description-sub">{image.description}</p>}
+                                        }} title={isOwner ? "Click to rename" : ""}>{displayedImage.title || displayedImage.description}</h2>
+                                        {displayedImage.title && <p className="image-description-sub">{displayedImage.description}</p>}
                                     </>
                                 )}
                                 {isOwner && (
                                     <div className="status-row">
-                                        <span className={`visibility-badge ${image.isPublic ? 'public' : 'private'}`}>
-                                            {image.isPublic ? <Globe size={14} /> : <Shield size={14} />}
-                                            {image.isPublic ? 'Public' : 'Private'}
+                                        <span className={`visibility-badge ${displayedImage.isPublic ? 'public' : 'private'}`}>
+                                            {displayedImage.isPublic ? <Globe size={14} /> : <Shield size={14} />}
+                                            {displayedImage.isPublic ? 'Public' : 'Private'}
                                         </span>
                                         <div className="meta-timestamp">
                                             <Calendar size={12} />
-                                            <span>{new Date(image.createdAt).toLocaleDateString()}</span>
+                                            <span>{new Date(displayedImage.createdAt).toLocaleDateString()}</span>
                                             <Clock size={12} className="ml-2" />
-                                            <span>{new Date(image.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                            <span>{new Date(displayedImage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                         </div>
                                         <div className="creator-row mt-2">
                                             <User size={12} className="text-dim" />
-                                            <span className="text-dim text-sm ml-1">Created by: {image.userName || (isOwner ? 'You' : 'Unknown')}</span>
+                                            <span className="text-dim text-sm ml-1">Created by: {displayedImage.userName || (isOwner ? 'You' : 'Unknown')}</span>
                                         </div>
                                     </div>
                                 )}
@@ -193,11 +248,11 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
                             <section className="detail-segment">
                                 <label>Prompt used for this image</label>
                                 <div className={`prompt-display glass ${isExpanded ? 'expanded' : 'truncated'}`} onClick={() => setIsExpanded(!isExpanded)}>
-                                    <p>{image.prompt}</p>
+                                    <p>{displayedImage.prompt}</p>
                                     <button className="btn-copy-float" onClick={handleCopy}>
                                         {copied ? <Check size={18} /> : <Copy size={18} />}
                                     </button>
-                                    {!isExpanded && image.prompt.length > 200 && <div className="expand-overlay-detail">Click to expand</div>}
+                                    {!isExpanded && displayedImage.prompt.length > 200 && <div className="expand-overlay-detail">Click to expand</div>}
                                 </div>
                             </section>
 
@@ -208,7 +263,7 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
                                         <span key={idx} className="tag-closable">
                                             {tag}
                                             {isOwner && (
-                                                <button className="tag-remove" onClick={() => onDeleteTag(image.id, tag)}>
+                                                <button className="tag-remove" onClick={() => onDeleteTag(displayedImage.id, tag)}>
                                                     <X size={12} />
                                                 </button>
                                             )}
@@ -222,14 +277,14 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
                                 </div>
                             </section>
 
-                            {(linkedPrompts.length > 0 || image.characterId) && (
+                            {(linkedPrompts.length > 0 || displayedImage.characterId) && (
                                 <section className="detail-segment">
                                     <label>Linked Context</label>
                                     <div className="linked-items-list flex-col gap-2">
-                                        {image.characterId && (
-                                            <div className="linked-item-card glass clickable" onClick={() => navigate('/characters', { state: { openId: image.characterId } })}>
+                                        {displayedImage.characterId && (
+                                            <div className="linked-item-card glass clickable" onClick={() => navigate('/characters', { state: { openId: displayedImage.characterId } })}>
                                                 <User size={16} className="text-accent" />
-                                                <span>Character: <strong>{image.characterName}</strong></span>
+                                                <span>Character: <strong>{displayedImage.characterName}</strong></span>
                                             </div>
                                         )}
                                         {linkedPrompts.map(p => (
@@ -257,7 +312,7 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
                                             onClick={async () => {
                                                 setIsSavingPrompt(true);
                                                 try {
-                                                    const saved = await promptsApi.save(image.prompt, image.tags, image.title);
+                                                    const saved = await promptsApi.save(displayedImage.prompt, displayedImage.tags, displayedImage.title);
                                                     addPromptToCache(saved);
                                                     alert('Prompt saved to your collection!');
                                                     loadLinkedPrompts(); // Refresh links
@@ -273,9 +328,9 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
                                             {isSavingPrompt ? <Loader2 className="spin" size={18} /> : <BookmarkPlus size={18} />}
                                             <span>Save Prompt</span>
                                         </button>
-                                        <button className={`btn-secondary ${image.isPublic ? 'active' : ''}`} onClick={handleTogglePublic} disabled={isUpdating}>
-                                            {isUpdating ? <Loader2 className="spin" size={18} /> : (image.isPublic ? <Shield size={18} /> : <Globe size={18} />)}
-                                            <span>{image.isPublic ? 'Make Private' : 'Publish'}</span>
+                                        <button className={`btn-secondary ${displayedImage.isPublic ? 'active' : ''}`} onClick={handleTogglePublic} disabled={isUpdating}>
+                                            {isUpdating ? <Loader2 className="spin" size={18} /> : (displayedImage.isPublic ? <Shield size={18} /> : <Globe size={18} />)}
+                                            <span>{displayedImage.isPublic ? 'Make Private' : 'Publish'}</span>
                                         </button>
                                         <button className="btn-icon-danger" onClick={handleDelete} disabled={isUpdating}>
                                             <Trash2 size={20} />
@@ -291,7 +346,7 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
                     onClose={() => setIsDeleteConfirmOpen(false)}
                     onConfirm={confirmDelete}
                     title="Delete Creation"
-                    message={!image.publicId
+                    message={!displayedImage.publicId
                         ? 'Note: This image was uploaded before Cloudinary synchronization was enabled. It will be removed from your gallery, but you must delete it manually from your Cloudinary dashboard.'
                         : 'Are you sure you want to delete this creation? This will also automatically remove the image from Cloudinary storage.'
                     }

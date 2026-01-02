@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
-import { Upload, Search, Settings as SettingsIcon, Copy, Check, Shield, Globe, Loader2, ListChecks, Trash2, X, User, Link } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Upload, Search, Settings as SettingsIcon, Copy, Check, Shield, Globe, Loader2, ListChecks, Trash2, X, User, Link, Layers } from 'lucide-react';
 import UploadModal from '../components/Gallery/UploadModal';
 import ImageDetailView from '../components/Gallery/ImageDetailView';
 import Settings from '../components/Settings';
 import ConfirmationModal from '../components/UI/ConfirmationModal';
+import { normalizePromptText } from '../utils/stringUtils';
 import '../components/Modal.css';
 import '../components/Gallery/Gallery.css';
 import '../components/Gallery/DetailView.css';
@@ -37,6 +38,7 @@ export default function Gallery({ user }) {
     const [selectedCharacter, setSelectedCharacter] = useState(null);
     const [isLinking, setIsLinking] = useState(false);
     const [displayLimit, setDisplayLimit] = useState(30);
+    const [isGrouped, setIsGrouped] = useState(false);
 
     useEffect(() => {
         window.scrollTo(0, 0);
@@ -150,7 +152,38 @@ export default function Gallery({ user }) {
         img.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()))
     );
 
-    const displayImages = filteredImages.slice(0, displayLimit);
+    // Group images by normalized prompt
+    const groupedData = useMemo(() => {
+        if (!isGrouped) {
+            return filteredImages.map(img => ({ ...img, seriesCount: 1, seriesImages: [img] }));
+        }
+
+        const groups = new Map();
+        // Sort by createdAt descending first
+        const sorted = [...filteredImages].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        for (const img of sorted) {
+            const key = normalizePromptText(img.prompt);
+            if (!groups.has(key)) {
+                groups.set(key, []);
+            }
+            groups.get(key).push(img);
+        }
+
+        // Return only the newest (first) image per group, with series metadata
+        const result = [];
+        for (const [, seriesImages] of groups) {
+            const newest = seriesImages[0];
+            result.push({
+                ...newest,
+                seriesCount: seriesImages.length,
+                seriesImages: seriesImages
+            });
+        }
+        return result;
+    }, [filteredImages, isGrouped]);
+
+    const displayImages = groupedData.slice(0, displayLimit);
 
     return (
         <>
@@ -193,6 +226,18 @@ export default function Gallery({ user }) {
                         </button>
                     </div>
 
+                    <div className="view-toggle glass group-toggle">
+                        <button
+                            className={`toggle-btn ${isGrouped ? 'active' : ''}`}
+                            onClick={() => setIsGrouped(!isGrouped)}
+                            disabled={!user}
+                            title="Bilder mit gleichem Prompt gruppieren"
+                        >
+                            <Layers size={16} />
+                            <span>Serien</span>
+                        </button>
+                    </div>
+
                     <div className="search-bar glass">
                         <Search size={18} className="search-icon" />
                         <input
@@ -226,6 +271,12 @@ export default function Gallery({ user }) {
                                                 <div className="selection-checkbox">
                                                     <Check size={16} />
                                                 </div>
+                                            </div>
+                                        )}
+                                        {img.seriesCount > 1 && (
+                                            <div className="series-badge">
+                                                <Layers size={12} />
+                                                <span>{img.seriesCount}</span>
                                             </div>
                                         )}
                                         <div className="card-overlay">
@@ -341,6 +392,7 @@ export default function Gallery({ user }) {
                 onClose={() => setSelectedImage(null)}
                 onDeleteTag={deleteTag}
                 user={user}
+                seriesImages={selectedImage?.seriesImages || (selectedImage ? [selectedImage] : [])}
                 onUpdateImage={(updated, deletedId) => {
                     if (deletedId) {
                         removeImageFromCache(deletedId);
