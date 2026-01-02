@@ -411,3 +411,47 @@
 .text-sm {
     font-size: 0.85rem;
 }
+
+/* Character Select in Upload Modal */
+.character-select-wrapper {
+    position: relative;
+}
+
+.character-select-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
+    color: var(--text-main);
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.character-select-btn:hover {
+    border-color: var(--accent-primary);
+}
+
+.character-select-btn svg:last-child {
+    margin-left: auto;
+}
+
+.character-dropdown-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 0.5rem;
+    max-height: 200px;
+    overflow-y: auto;
+    padding: 0.5rem;
+    border-radius: 12px;
+    background: rgba(20, 20, 25, 0.98) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    z-index: 100;
+}

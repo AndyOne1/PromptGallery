@@ -1,15 +1,15 @@
 import { useState, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useDropzone } from 'react-dropzone';
-import { X, Upload, Loader2, Wand2, Globe, Shield } from 'lucide-react';
+import { X, Upload, Loader2, Wand2, Globe, Shield, User, ChevronDown } from 'lucide-react';
 import { uploadToCloudinary } from '../../services/cloudinary';
 import { analyzePrompt } from '../../services/openrouter';
 import { compressImage } from '../../utils/imageUtils';
-import { galleryApi } from '../../services/api';
+import { galleryApi, charactersApi } from '../../services/api';
 import { useData } from '../../context/DataContext';
 import { normalizePromptText } from '../../utils/stringUtils';
 
-export default function UploadModal({ isOpen, onClose, onUploadComplete, initialPrompt = '', initialTags = [] }) {
+export default function UploadModal({ isOpen, onClose, onUploadComplete, initialPrompt = '', initialTags = [], user }) {
     const [files, setFiles] = useState([]);
     const [previews, setPreviews] = useState([]);
     const [prompt, setPrompt] = useState(initialPrompt);
@@ -18,15 +18,35 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete, initial
     const [status, setStatus] = useState('');
     const { privateImages } = useData();
 
+    // Character linking state
+    const [characters, setCharacters] = useState([]);
+    const [selectedCharacter, setSelectedCharacter] = useState(null);
+    const [showCharacterDropdown, setShowCharacterDropdown] = useState(false);
+
     useEffect(() => {
         if (isOpen) {
             setPrompt(initialPrompt);
+            loadCharacters();
             document.body.classList.add('modal-open');
         } else {
             document.body.classList.remove('modal-open');
         }
         return () => document.body.classList.remove('modal-open');
     }, [isOpen, initialPrompt]);
+
+    const loadCharacters = async () => {
+        if (!user) {
+            const local = JSON.parse(localStorage.getItem('local_characters') || '[]');
+            setCharacters(local);
+            return;
+        }
+        try {
+            const data = await charactersApi.getAll();
+            setCharacters(data);
+        } catch (err) {
+            console.error('Failed to load characters:', err);
+        }
+    };
 
     const onDrop = useCallback(acceptedFiles => {
         setFiles(prev => [...prev, ...acceptedFiles]);
@@ -81,7 +101,13 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete, initial
             }
 
             // If we have initial tags (from saved prompts), we prefer them
-            const finalTags = initialTags.length > 0 ? initialTags : analysis.tags;
+            let finalTags = initialTags.length > 0 ? initialTags : analysis.tags;
+
+            // Add character name as tag if selected
+            if (selectedCharacter) {
+                finalTags = [...finalTags, selectedCharacter.name];
+            }
+
             const finalTitle = analysis.title;
             const finalDescription = analysis.description;
 
@@ -115,8 +141,17 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete, initial
             setStatus('Saving to database...');
             // 3. Save as batch
             const savedItems = await galleryApi.upload(uploadResults);
+            const savedArray = Array.isArray(savedItems) ? savedItems : [savedItems];
 
-            onUploadComplete(Array.isArray(savedItems) ? savedItems[0] : savedItems);
+            // 4. Link to character if selected
+            if (selectedCharacter && user) {
+                setStatus('Linking to character...');
+                for (const item of savedArray) {
+                    await charactersApi.linkImage(selectedCharacter.id, item.id);
+                }
+            }
+
+            onUploadComplete(savedArray[0]);
             handleClose();
         } catch (error) {
             alert('Upload failed: ' + error.message);
@@ -134,6 +169,8 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete, initial
         });
         setPrompt('');
         setIsPublic(false);
+        setSelectedCharacter(null);
+        setShowCharacterDropdown(false);
         onClose();
     };
 
@@ -177,6 +214,52 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete, initial
                         />
                     </div>
 
+                    {/* Character Link Option */}
+                    {characters.length > 0 && (
+                        <div className="input-group">
+                            <label>Link to Character (optional)</label>
+                            <div className="character-select-wrapper">
+                                <button
+                                    className="character-select-btn glass"
+                                    onClick={() => setShowCharacterDropdown(!showCharacterDropdown)}
+                                >
+                                    {selectedCharacter ? (
+                                        <>
+                                            <User size={16} />
+                                            <span>{selectedCharacter.name}</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <User size={16} />
+                                            <span>Kein Character</span>
+                                        </>
+                                    )}
+                                    <ChevronDown size={16} />
+                                </button>
+                                {showCharacterDropdown && (
+                                    <div className="character-dropdown-list glass">
+                                        <button
+                                            className={`dropdown-item ${!selectedCharacter ? 'active' : ''}`}
+                                            onClick={() => { setSelectedCharacter(null); setShowCharacterDropdown(false); }}
+                                        >
+                                            <span>Kein Character</span>
+                                        </button>
+                                        {characters.map(char => (
+                                            <button
+                                                key={char.id}
+                                                className={`dropdown-item ${selectedCharacter?.id === char.id ? 'active' : ''}`}
+                                                onClick={() => { setSelectedCharacter(char); setShowCharacterDropdown(false); }}
+                                            >
+                                                <User size={14} />
+                                                <span>{char.name}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="visibility-options">
                         <label className={`visibility-chip ${!isPublic ? 'active' : ''}`} onClick={() => setIsPublic(false)}>
                             <Shield size={16} />
@@ -215,3 +298,4 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete, initial
 
     return createPortal(modalContent, document.getElementById('modal-root'));
 }
+

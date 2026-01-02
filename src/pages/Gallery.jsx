@@ -318,6 +318,7 @@ export default function Gallery({ user }) {
                 isOpen={isUploadOpen}
                 onClose={() => setIsUploadOpen(false)}
                 onUploadComplete={handleUploadComplete}
+                user={user}
             />
             <ImageDetailView
                 image={selectedImage}
