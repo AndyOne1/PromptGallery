@@ -88,7 +88,11 @@ export default function Generator({ user }) {
         }
 
         if (mode === 'smart') {
-            return <SmartGenerator onComplete={handleComplete} user={user} />;
+            return <SmartGenerator
+                onComplete={handleComplete}
+                user={user}
+                initialCharacter={location.state?.preSelectedCharacter}
+            />;
         }
 
         if (mode === 'character') {

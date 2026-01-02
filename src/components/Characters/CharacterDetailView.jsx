@@ -348,7 +348,23 @@ export default function CharacterDetailView({
                             </div>
 
                             <button
-                                className="btn-secondary btn-danger mt-4 w-full"
+                                className="btn-primary mt-6 w-full"
+                                onClick={() => {
+                                    navigate('/generator', {
+                                        state: {
+                                            mode: 'smart',
+                                            preSelectedCharacter: character
+                                        }
+                                    });
+                                    onClose();
+                                }}
+                            >
+                                <Plus size={16} />
+                                <span>Add to Prompt</span>
+                            </button>
+
+                            <button
+                                className="btn-secondary btn-danger mt-2 w-full"
                                 onClick={() => onDelete?.(character.id)}
                             >
                                 <Trash2 size={16} />
