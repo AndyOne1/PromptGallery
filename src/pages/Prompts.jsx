@@ -11,7 +11,7 @@ import { useData } from '../context/DataContext';
 import { normalizePromptText } from '../utils/stringUtils';
 
 export default function Prompts({ user }) {
-    const { prompts, isLoadingPrompts, fetchPrompts, removePromptFromCache, privateImages } = useData();
+    const { prompts, isLoadingPrompts, fetchPrompts, removePromptFromCache, privateImages, characters } = useData();
     const [copiedId, setCopiedId] = useState(null);
     const [isUploadOpen, setIsUploadOpen] = useState(false);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -111,13 +111,32 @@ export default function Prompts({ user }) {
             });
         }
         if (excludeCharacters) {
+            // Get character names for matching
+            const characterNames = characters.map(c => c.name.toLowerCase());
+
             result = result.filter(p => {
-                const tags = p.refinedTags || p.tags || [];
-                return !tags.includes('Character Prompt');
+                const tags = (p.refinedTags || p.tags || []).map(t => t.toLowerCase());
+
+                // Check if any tag contains "character" keyword
+                const hasCharacterKeyword = tags.some(tag =>
+                    tag.includes('character') ||
+                    tag.includes('charakter') ||
+                    tag.includes('reference sheet') ||
+                    tag.includes('ref sheet')
+                );
+                if (hasCharacterKeyword) return false;
+
+                // Check if any tag matches a character name
+                const hasCharacterName = tags.some(tag =>
+                    characterNames.some(name => tag.includes(name) || name.includes(tag))
+                );
+                if (hasCharacterName) return false;
+
+                return true;
             });
         }
         return result;
-    }, [sortedPrompts, searchQuery, excludeCharacters]);
+    }, [sortedPrompts, searchQuery, excludeCharacters, characters]);
 
     const displayPrompts = useMemo(() => {
         return filteredPrompts.slice(0, displayLimit);
