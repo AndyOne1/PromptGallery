@@ -153,6 +153,17 @@ export const handler = async (event) => {
             const characterId = parseInt(segments[0]);
             const body = JSON.parse(event.body);
 
+            // Check if already linked
+            const existing = await db.select().from(characterImages)
+                .where(and(
+                    eq(characterImages.characterId, characterId),
+                    eq(characterImages.imageId, body.imageId)
+                ));
+
+            if (existing.length > 0) {
+                return { statusCode: 200, headers, body: JSON.stringify(existing[0]) };
+            }
+
             const [link] = await db.insert(characterImages).values({
                 characterId,
                 imageId: body.imageId,

@@ -1,6 +1,6 @@
 import { getDb } from './db.js';
 import { galleryItems, users, characters, characterImages } from './schema.js';
-import { eq, and, or, inArray } from 'drizzle-orm';
+import { eq, and, or, inArray, sql } from 'drizzle-orm';
 import { verifyToken, headers } from './utils.js';
 import axios from 'axios';
 
@@ -16,6 +16,14 @@ export const handler = async (event) => {
         // GET: Fetch items
         if (event.httpMethod === 'GET') {
             const { visibility } = event.queryStringParameters || {};
+
+            const charSubquery = db.select({
+                imageId: characterImages.imageId,
+                characterId: sql`MIN(${characterImages.characterId})`.as('characterId'),
+            })
+                .from(characterImages)
+                .groupBy(characterImages.imageId)
+                .as('cs');
 
             let query = db.select({
                 id: galleryItems.id,
@@ -34,8 +42,8 @@ export const handler = async (event) => {
             })
                 .from(galleryItems)
                 .leftJoin(users, eq(galleryItems.userId, users.id))
-                .leftJoin(characterImages, eq(galleryItems.id, characterImages.imageId))
-                .leftJoin(characters, eq(characterImages.characterId, characters.id));
+                .leftJoin(charSubquery, eq(galleryItems.id, charSubquery.imageId))
+                .leftJoin(characters, eq(charSubquery.characterId, characters.id));
 
             let items;
             if (visibility === 'public') {
@@ -202,6 +210,14 @@ export const handler = async (event) => {
                 return { statusCode: 404, headers, body: JSON.stringify({ error: 'Item not found or unauthorized' }) };
             }
 
+            const charSubquery = db.select({
+                imageId: characterImages.imageId,
+                characterId: sql`MIN(${characterImages.characterId})`.as('characterId'),
+            })
+                .from(characterImages)
+                .groupBy(characterImages.imageId)
+                .as('cs');
+
             // Return with userName and character info
             const [withMeta] = await db.select({
                 id: galleryItems.id,
@@ -220,8 +236,8 @@ export const handler = async (event) => {
             })
                 .from(galleryItems)
                 .leftJoin(users, eq(galleryItems.userId, users.id))
-                .leftJoin(characterImages, eq(galleryItems.id, characterImages.imageId))
-                .leftJoin(characters, eq(characterImages.characterId, characters.id))
+                .leftJoin(charSubquery, eq(galleryItems.id, charSubquery.imageId))
+                .leftJoin(characters, eq(charSubquery.characterId, characters.id))
                 .where(eq(galleryItems.id, result[0].id))
                 .limit(1);
 
