@@ -89,10 +89,13 @@
 }
 
 .wizard-intro {
-    max-width: 600px;
-    margin: 0 auto;
+    max-width: 800px;
+    margin: 4rem auto;
     padding: 4rem 2rem;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .wizard-icon {
@@ -109,4 +112,31 @@
     color: var(--text-dim);
     margin-bottom: 2.5rem;
     line-height: 1.6;
+}
+
+/* Utilities */
+.flex-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.justify-center {
+    justify-content: center;
+}
+
+.flex-wrap {
+    flex-wrap: wrap;
+}
+
+.gap-4 {
+    gap: 1rem;
+}
+
+.mt-8 {
+    margin-top: 2rem;
+}
+
+.w-full {
+    width: 100%;
 }

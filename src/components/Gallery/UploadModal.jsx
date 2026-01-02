@@ -151,7 +151,7 @@ export default function UploadModal({ isOpen, onClose, onUploadComplete, initial
                 }
             }
 
-            onUploadComplete(savedArray[0]);
+            onUploadComplete(savedArray);
             handleClose();
         } catch (error) {
             alert('Upload failed: ' + error.message);

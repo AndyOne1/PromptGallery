@@ -88,10 +88,12 @@ export function DataProvider({ children, user }) {
         }
     }, [user, lastFetch.prompts]);
 
-    const addImage = (newImage) => {
-        setPrivateImages(prev => [newImage, ...prev]);
-        if (newImage.isPublic) {
-            setPublicImages(prev => [newImage, ...prev]);
+    const addImage = (newImages) => {
+        const imagesToAdd = Array.isArray(newImages) ? newImages : [newImages];
+        setPrivateImages(prev => [...imagesToAdd, ...prev]);
+        const publicToAdd = imagesToAdd.filter(img => img.isPublic);
+        if (publicToAdd.length > 0) {
+            setPublicImages(prev => [...publicToAdd, ...prev]);
         }
     };
 
