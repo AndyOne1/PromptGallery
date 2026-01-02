@@ -309,44 +309,39 @@ Antworte NUR mit dem JSON-Objekt.`
     }
 };
 
-// Analyze image to extract character attributes using vision model
+// Analyze image to extract character attributes using vision model + Grok for JSON
 export const analyzeImageForCharacter = async (apiKey, imageUrl) => {
     try {
-        const response = await axios.post(
+        // Step 1: Use vision model to get a detailed text description
+        const visionResponse = await axios.post(
             OPENROUTER_API_URL,
             {
                 model: 'meta-llama/llama-3.2-11b-vision-instruct',
                 messages: [
                     {
                         role: 'system',
-                        content: `Du bist ein Experte für visuelle Analyse. Deine Aufgabe ist es, AUSSCHLIESSLICH die Person/das Subjekt in einem Bild zu beschreiben.
+                        content: `Du bist ein Experte für visuelle Analyse von Personen. Beschreibe die Person im Bild SEHR DETAILLIERT.
 
-WICHTIG: Beschreibe NUR die Person selbst, KEINE Umgebung, KEIN Hintergrund, KEINE Szene!
+Fokussiere dich auf:
+- Geschätztes Alter und Geschlecht
+- Haarfarbe und Frisur
+- Augenfarbe (falls erkennbar)
+- Hautton
+- Körperbau und geschätzte Größe
+- Gesichtsmerkmale (Augen, Nase, Lippen, Gesichtsform)
+- Kleidung und Stil
+- Ausstrahlung/Persönlichkeit
+- Accessoires (Schmuck, Brille, etc.)
+- Besondere Merkmale (Tattoos, Piercings, Narben, Muttermale)
 
-Gib ein JSON-Objekt mit folgenden Attributen zurück:
-- name: Vorschlag für einen passenden Namen
-- age: Geschätztes Alter (z.B. "Mitte 20")
-- gender: Geschlecht
-- hairColor: Haarfarbe mit Details
-- hairStyle: Frisur-Beschreibung
-- eyeColor: Augenfarbe (falls erkennbar)
-- skinTone: Hautton
-- bodyType: Körperbau (falls sichtbar)
-- height: Geschätzte Größe (falls einschätzbar)
-- facialFeatures: Gesichtsmerkmale (Augen, Nase, Lippen, Kinn etc.)
-- style: Kleidungsstil im Bild
-- personality: Wirkung/Ausstrahlung (2-3 Adjektive)
-- accessories: Sichtbare Accessoires
-- distinguishingMarks: Besondere Merkmale (Tattoos, Piercings, Narben etc.)
-
-WICHTIG: Antworte NUR mit dem JSON-Objekt, ohne zusätzlichen Text davor oder danach!`
+Beschreibe NUR die Person, NICHT die Umgebung oder den Hintergrund!`
                     },
                     {
                         role: 'user',
                         content: [
                             {
                                 type: 'text',
-                                text: 'Analysiere diese Person und extrahiere die Charakter-Attribute. Antworte NUR mit einem validen JSON-Objekt.'
+                                text: 'Beschreibe diese Person so detailliert wie möglich. Konzentriere dich auf alle sichtbaren physischen Merkmale.'
                             },
                             {
                                 type: 'image_url',
@@ -355,7 +350,6 @@ WICHTIG: Antworte NUR mit dem JSON-Objekt, ohne zusätzlichen Text davor oder da
                         ]
                     }
                 ]
-                // Note: response_format not supported by Llama vision models
             },
             {
                 headers: {
@@ -367,22 +361,58 @@ WICHTIG: Antworte NUR mit dem JSON-Objekt, ohne zusätzlichen Text davor oder da
             }
         );
 
-        const content = response.data.choices[0].message.content;
+        const description = visionResponse.data.choices[0].message.content;
+        console.log('Vision description:', description);
 
-        // Try to parse JSON directly
-        if (typeof content === 'object') return content;
+        // Step 2: Use Grok to convert description to structured JSON
+        const grokResponse = await axios.post(
+            OPENROUTER_API_URL,
+            {
+                model: 'x-ai/grok-3-mini-beta',
+                messages: [
+                    {
+                        role: 'system',
+                        content: `Du bist ein Daten-Extraktor. Konvertiere die Personenbeschreibung in ein strukturiertes JSON-Objekt.
 
-        // Try to extract JSON from text response
-        try {
-            return JSON.parse(content);
-        } catch {
-            // Try to find JSON object in the response text
-            const jsonMatch = content.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                return JSON.parse(jsonMatch[0]);
+Erstelle ein JSON-Objekt mit genau diesen Feldern:
+{
+  "name": "Passender Vorschlag für einen Namen",
+  "age": "Geschätztes Alter",
+  "gender": "Geschlecht",
+  "hairColor": "Haarfarbe mit Details",
+  "hairStyle": "Frisur-Beschreibung",
+  "eyeColor": "Augenfarbe",
+  "skinTone": "Hautton",
+  "bodyType": "Körperbau",
+  "height": "Geschätzte Größe",
+  "facialFeatures": "Gesichtsmerkmale",
+  "style": "Kleidungsstil",
+  "personality": "Ausstrahlung (2-3 Adjektive)",
+  "accessories": "Accessoires",
+  "distinguishingMarks": "Besondere Merkmale"
+}
+
+Wenn Information fehlt, verwende "nicht erkennbar" oder eine sinnvolle Schätzung.`
+                    },
+                    {
+                        role: 'user',
+                        content: `Extrahiere die Charakter-Attribute aus dieser Beschreibung:\n\n${description}`
+                    }
+                ],
+                response_format: { type: 'json_object' }
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'HTTP-Referer': 'http://localhost:5173',
+                    'X-Title': 'PromptFlow Character',
+                    'Content-Type': 'application/json'
+                }
             }
-            throw new Error('Die Antwort konnte nicht als JSON interpretiert werden. Bitte versuche es erneut.');
-        }
+        );
+
+        const content = grokResponse.data.choices[0].message.content;
+        return typeof content === 'string' ? JSON.parse(content) : content;
     } catch (error) {
         console.error('Image analysis error:', error);
         throw error;
