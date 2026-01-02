@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { MessageSquare, Copy, Check, Trash2, Calendar, ImagePlus, Search, Hash, Clock } from 'lucide-react';
+import { MessageSquare, Copy, Check, Trash2, Calendar, ImagePlus, Search, Hash, Clock, User } from 'lucide-react';
 import { promptsApi } from '../services/api';
 import UploadModal from '../components/Gallery/UploadModal';
 import PromptDetailView from '../components/Prompts/PromptDetailView';
@@ -117,7 +117,7 @@ export default function Prompts({ user }) {
             });
         }
         return result;
-    }, [sortedPrompts, searchQuery]);
+    }, [sortedPrompts, searchQuery, excludeCharacters]);
 
     const displayPrompts = useMemo(() => {
         return filteredPrompts.slice(0, displayLimit);
@@ -133,6 +133,17 @@ export default function Prompts({ user }) {
             </header>
 
             <div className="prompts-controls">
+                <div className="view-toggle glass filter-toggle">
+                    <button
+                        className={`toggle-btn ${excludeCharacters ? 'active' : ''}`}
+                        onClick={() => setExcludeCharacters(!excludeCharacters)}
+                        title="Character Prompts ausblenden"
+                    >
+                        <User size={16} />
+                        <span>Ohne Charaktere</span>
+                    </button>
+                </div>
+
                 <div className="search-bar glass">
                     <Search size={20} className="search-icon" />
                     <input
@@ -141,16 +152,6 @@ export default function Prompts({ user }) {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
-                </div>
-                <div className="filter-options flex-row gap-4">
-                    <label className="flex-row gap-2 clickable text-sm">
-                        <input
-                            type="checkbox"
-                            checked={excludeCharacters}
-                            onChange={(e) => setExcludeCharacters(e.target.checked)}
-                        />
-                        <span>Exclude Character Prompts</span>
-                    </label>
                 </div>
             </div>
 
