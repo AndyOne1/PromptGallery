@@ -76,6 +76,14 @@ const VIBE_CATEGORIES = {
                 { name: 'Eye Level', tags: 'natural perspective, eye level shot, direct look' },
                 { name: 'Wide Angle', tags: 'wide shot, panoramic, spacious view, surroundings visible' },
                 { name: 'Close Up', tags: 'macro detail, tight crop, focal point on face or object' }
+            ],
+            'Fotograf / Wer?': [
+                { name: 'Selfie (Arm)', tags: 'selfie, arm extended, holding phone, front camera look' },
+                { name: 'Mirror Selfie', tags: 'mirror selfie, visible phone in reflection, looking at mirror' },
+                { name: 'Taken by Friend', tags: 'shot by someone else, candid perspective, no selfie arm, full body or half body view' },
+                { name: 'Professional', tags: 'professional photography, high-end DSLR, artistic framing, professional photoshoot' },
+                { name: 'Surveillance', tags: 'surveillance camera, security footage, grainy cctv, high angle view' },
+                { name: 'Tripod / Timer', tags: 'shot on tripod, self-timer, distant perspective, hands free' }
             ]
         }
     },
