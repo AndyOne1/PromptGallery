@@ -433,3 +433,156 @@
         grid-template-columns: 1fr;
     }
 }
+
+/* Clickable Portrait */
+.large-portrait.clickable {
+    cursor: pointer;
+    position: relative;
+}
+
+.portrait-edit-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    opacity: 0;
+    transition: opacity 0.2s;
+    color: var(--text-main);
+    font-size: 0.85rem;
+}
+
+.large-portrait.clickable:hover .portrait-edit-overlay {
+    opacity: 1;
+}
+
+/* Portrait Tags */
+.portrait-tags {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+/* Image Picker Modal */
+.image-picker-modal {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 80%;
+    max-width: 600px;
+    max-height: 70vh;
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    background: var(--bg-secondary) !important;
+}
+
+.picker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.picker-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.picker-content {
+    padding: 1rem;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.picker-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+}
+
+.picker-item {
+    aspect-ratio: 1;
+    border-radius: 10px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 2px solid transparent;
+}
+
+.picker-item:hover {
+    transform: scale(1.02);
+    border-color: var(--accent-primary);
+}
+
+.picker-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Recent Prompts */
+.recent-prompts {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.recent-prompts h4 {
+    margin: 0 0 0.75rem 0;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-dim);
+}
+
+.prompt-tiles {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.prompt-tile {
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.prompt-tile:hover {
+    background: rgba(0, 0, 0, 0.4);
+    border-color: var(--accent-primary);
+}
+
+.tile-title {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--accent-secondary);
+    margin-bottom: 0.25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tile-preview {
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.text-center {
+    text-align: center;
+}

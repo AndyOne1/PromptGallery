@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
     X, User, Copy, Check, Trash2, ChevronDown, ChevronUp,
-    Sparkles, Image as ImageIcon, Send, Loader2, Plus, Pin
+    Sparkles, Image as ImageIcon, Send, Loader2, Plus, Pin, Camera
 } from 'lucide-react';
 import { generateSmartPrompt } from '../../services/openrouter';
-import { promptsApi, charactersApi } from '../../services/api';
+import { promptsApi, charactersApi, galleryApi } from '../../services/api';
 import './CharacterDetailView.css';
 
 const ATTRIBUTE_LABELS = {
@@ -47,10 +47,15 @@ export default function CharacterDetailView({
     const [isGenerating, setIsGenerating] = useState(false);
     const [linkedImages, setLinkedImages] = useState([]);
     const [isLoadingImages, setIsLoadingImages] = useState(false);
+    const [recentPrompts, setRecentPrompts] = useState([]);
+    const [showImagePicker, setShowImagePicker] = useState(false);
+    const [galleryImages, setGalleryImages] = useState([]);
+    const [isLoadingGallery, setIsLoadingGallery] = useState(false);
 
     useEffect(() => {
         if (character?.id && isOpen) {
             loadLinkedImages();
+            loadRecentPrompts();
         }
     }, [character?.id, isOpen]);
 
@@ -64,6 +69,48 @@ export default function CharacterDetailView({
             console.error('Failed to load linked images:', err);
         } finally {
             setIsLoadingImages(false);
+        }
+    };
+
+    const loadRecentPrompts = async () => {
+        if (!user || !character?.name) return;
+        try {
+            const allPrompts = await promptsApi.get();
+            const charPrompts = allPrompts
+                .filter(p => p.refinedTags?.includes(character.name) || p.title?.includes(character.name))
+                .slice(0, 5);
+            setRecentPrompts(charPrompts);
+        } catch (err) {
+            console.error('Failed to load prompts:', err);
+        }
+    };
+
+    const loadGalleryImages = async () => {
+        if (!user) return;
+        setIsLoadingGallery(true);
+        try {
+            const data = await galleryApi.getPrivate();
+            setGalleryImages(data);
+        } catch (err) {
+            console.error('Failed to load gallery:', err);
+        } finally {
+            setIsLoadingGallery(false);
+        }
+    };
+
+    const handleSelectImage = async (imageId) => {
+        if (!user || !character?.id) return;
+        try {
+            // Link image to character
+            await charactersApi.linkImage(character.id, imageId);
+            // Pin the image
+            await charactersApi.pinImage(character.id, imageId);
+            setShowImagePicker(false);
+            // Trigger reload
+            onUpdate?.({ ...character, pinnedImageId: imageId });
+            loadLinkedImages();
+        } catch (err) {
+            alert('Fehler beim Setzen des Bildes: ' + err.message);
         }
     };
 
@@ -91,22 +138,26 @@ export default function CharacterDetailView({
                 referenceGender: ''
             });
 
-            // Save prompt with Character tag
             if (user) {
                 await promptsApi.save(
                     result.prompt,
                     [...(result.refined_tags || []), 'Character Prompt', character.name],
                     `${character.name}: ${result.title}`
                 );
+                loadRecentPrompts();
             }
 
             setInstruction('');
-            alert('Prompt erstellt und gespeichert!');
         } catch (err) {
             alert('Fehler: ' + err.message);
         } finally {
             setIsGenerating(false);
         }
+    };
+
+    const openImagePicker = () => {
+        loadGalleryImages();
+        setShowImagePicker(true);
     };
 
     if (!isOpen || !character) return null;
@@ -122,20 +173,16 @@ export default function CharacterDetailView({
                     <X size={18} />
                 </button>
 
-                {/* Header */}
+                {/* Header - Just name, no tags */}
                 <div className="detail-header">
                     <h2 className="title-gradient">{character.name}</h2>
-                    <div className="header-tags">
-                        {character.attributes?.age && <span className="tag">{character.attributes.age}</span>}
-                        {character.attributes?.gender && <span className="tag">{character.attributes.gender}</span>}
-                    </div>
                 </div>
 
                 {/* 3-Column Layout */}
                 <div className="detail-columns">
-                    {/* Left: Portrait */}
+                    {/* Left: Portrait + Tags */}
                     <div className="detail-column-left">
-                        <div className="large-portrait">
+                        <div className="large-portrait clickable" onClick={openImagePicker}>
                             {character.pinnedImage?.url ? (
                                 <img src={character.pinnedImage.url} alt={character.name} />
                             ) : (
@@ -143,7 +190,18 @@ export default function CharacterDetailView({
                                     <User size={80} />
                                 </div>
                             )}
+                            <div className="portrait-edit-overlay">
+                                <Camera size={24} />
+                                <span>Foto ändern</span>
+                            </div>
                         </div>
+
+                        {/* Tags moved here below portrait */}
+                        <div className="portrait-tags">
+                            {character.attributes?.age && <span className="tag">{character.attributes.age}</span>}
+                            {character.attributes?.gender && <span className="tag">{character.attributes.gender}</span>}
+                        </div>
+
                         <button
                             className="btn-secondary btn-danger mt-4 w-full"
                             onClick={() => onDelete?.(character.id)}
@@ -232,6 +290,26 @@ export default function CharacterDetailView({
                                         )}
                                         <span>Generate & Save</span>
                                     </button>
+
+                                    {/* Recent Prompts */}
+                                    {recentPrompts.length > 0 && (
+                                        <div className="recent-prompts">
+                                            <h4>Letzte Prompts</h4>
+                                            <div className="prompt-tiles">
+                                                {recentPrompts.map(p => (
+                                                    <div
+                                                        key={p.id}
+                                                        className="prompt-tile"
+                                                        onClick={() => handleCopy(p.content)}
+                                                        title={p.content}
+                                                    >
+                                                        <span className="tile-title">{p.title || 'Prompt'}</span>
+                                                        <span className="tile-preview">{p.content?.slice(0, 60)}...</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
@@ -258,7 +336,7 @@ export default function CharacterDetailView({
                                         <div className="empty-gallery">
                                             <ImageIcon size={32} />
                                             <p>Keine Bilder verknüpft</p>
-                                            <button className="btn-secondary small">
+                                            <button className="btn-secondary small" onClick={openImagePicker}>
                                                 <Plus size={14} />
                                                 <span>Bild hinzufügen</span>
                                             </button>
@@ -270,8 +348,42 @@ export default function CharacterDetailView({
                     </div>
                 </div>
             </div>
+
+            {/* Image Picker Modal */}
+            {showImagePicker && (
+                <div className="image-picker-modal glass" onClick={e => e.stopPropagation()}>
+                    <div className="picker-header">
+                        <h3>Bild auswählen</h3>
+                        <button className="modal-close-btn" onClick={() => setShowImagePicker(false)}>
+                            <X size={18} />
+                        </button>
+                    </div>
+                    <div className="picker-content detail-scroll">
+                        {isLoadingGallery ? (
+                            <div className="loading-mini">
+                                <Loader2 size={32} className="spin" />
+                            </div>
+                        ) : galleryImages.length > 0 ? (
+                            <div className="picker-grid">
+                                {galleryImages.map(img => (
+                                    <div
+                                        key={img.id}
+                                        className="picker-item"
+                                        onClick={() => handleSelectImage(img.id)}
+                                    >
+                                        <img src={img.url} alt="" />
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-dim text-center">Keine Bilder in deiner Galerie</p>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 
     return createPortal(modal, document.body);
 }
+

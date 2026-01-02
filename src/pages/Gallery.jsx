@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Upload, Search, Settings as SettingsIcon, Copy, Check, Shield, Globe, Loader2, ListChecks, Trash2, X } from 'lucide-react';
+import { Upload, Search, Settings as SettingsIcon, Copy, Check, Shield, Globe, Loader2, ListChecks, Trash2, X, User, Link } from 'lucide-react';
 import UploadModal from '../components/Gallery/UploadModal';
 import ImageDetailView from '../components/Gallery/ImageDetailView';
 import Settings from '../components/Settings';
@@ -7,7 +7,7 @@ import ConfirmationModal from '../components/UI/ConfirmationModal';
 import '../components/Modal.css';
 import '../components/Gallery/Gallery.css';
 import '../components/Gallery/DetailView.css';
-import { galleryApi } from '../services/api';
+import { galleryApi, charactersApi } from '../services/api';
 
 import { useData } from '../context/DataContext';
 
@@ -25,16 +25,37 @@ export default function Gallery({ user }) {
     const [isUploadOpen, setIsUploadOpen] = useState(false);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
-    const [view, setView] = useState('private'); // 'private' or 'public'
+    const [view, setView] = useState('private');
     const [search, setSearch] = useState('');
     const [copiedId, setCopiedId] = useState(null);
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [selectedIds, setSelectedIds] = useState([]);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+    // Character linking state
+    const [showCharacterPicker, setShowCharacterPicker] = useState(false);
+    const [characters, setCharacters] = useState([]);
+    const [selectedCharacter, setSelectedCharacter] = useState(null);
+    const [isLinking, setIsLinking] = useState(false);
 
     useEffect(() => {
         fetchImages(view);
     }, [view, user, fetchImages]);
+
+    useEffect(() => {
+        if (user && isSelectionMode) {
+            loadCharacters();
+        }
+    }, [user, isSelectionMode]);
+
+    const loadCharacters = async () => {
+        if (!user) return;
+        try {
+            const data = await charactersApi.getAll();
+            setCharacters(data);
+        } catch (err) {
+            console.error('Failed to load characters:', err);
+        }
+    };
 
     const images = view === 'public' ? publicImages : privateImages;
 
@@ -65,6 +86,8 @@ export default function Gallery({ user }) {
     const toggleSelectMode = () => {
         setIsSelectionMode(!isSelectionMode);
         setSelectedIds([]);
+        setShowCharacterPicker(false);
+        setSelectedCharacter(null);
     };
 
     const toggleImageSelection = (id) => {
@@ -87,6 +110,25 @@ export default function Gallery({ user }) {
         } catch (err) {
             console.error('Batch deletion failed:', err);
             alert('Failed to delete some images.');
+        }
+    };
+
+    const handleLinkToCharacter = async () => {
+        if (!selectedCharacter || !selectedIds.length) return;
+        setIsLinking(true);
+        try {
+            for (const imageId of selectedIds) {
+                await charactersApi.linkImage(selectedCharacter.id, imageId);
+            }
+            alert(`${selectedIds.length} Bilder mit ${selectedCharacter.name} verknüpft!`);
+            setIsSelectionMode(false);
+            setSelectedIds([]);
+            setShowCharacterPicker(false);
+            setSelectedCharacter(null);
+        } catch (err) {
+            alert('Fehler beim Verknüpfen: ' + err.message);
+        } finally {
+            setIsLinking(false);
         }
     };
 
@@ -218,6 +260,46 @@ export default function Gallery({ user }) {
                 <div className="batch-actions-bar glass animate-slide-up">
                     <span className="batch-info">{selectedIds.length} items selected</span>
                     <div className="batch-btns">
+                        {/* Character Link Dropdown */}
+                        <div className="character-link-section">
+                            <button
+                                className={`btn-secondary ${showCharacterPicker ? 'active' : ''}`}
+                                onClick={() => setShowCharacterPicker(!showCharacterPicker)}
+                            >
+                                <User size={16} />
+                                <span>Verknüpfen mit</span>
+                            </button>
+                            {showCharacterPicker && (
+                                <div className="character-dropdown glass">
+                                    {characters.length > 0 ? (
+                                        <>
+                                            {characters.map(char => (
+                                                <button
+                                                    key={char.id}
+                                                    className={`dropdown-item ${selectedCharacter?.id === char.id ? 'active' : ''}`}
+                                                    onClick={() => setSelectedCharacter(char)}
+                                                >
+                                                    <User size={14} />
+                                                    <span>{char.name}</span>
+                                                </button>
+                                            ))}
+                                            {selectedCharacter && (
+                                                <button
+                                                    className="btn-primary small w-full mt-2"
+                                                    onClick={handleLinkToCharacter}
+                                                    disabled={isLinking}
+                                                >
+                                                    {isLinking ? <Loader2 size={14} className="spin" /> : <Link size={14} />}
+                                                    <span>Speichern</span>
+                                                </button>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <p className="text-dim text-sm p-2">Keine Charaktere</p>
+                                    )}
+                                </div>
+                            )}
+                        </div>
                         <button className="btn-secondary" onClick={() => setSelectedIds([])}>
                             Deselect All
                         </button>
