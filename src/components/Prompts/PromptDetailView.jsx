@@ -253,45 +253,47 @@ export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) 
                         confirmText="Delete forever"
                     />
                 </div>
-                {isPickerOpen && (
-                    <ImagePickerModal
-                        isOpen={isPickerOpen}
-                        onClose={() => setIsPickerOpen(false)}
-                        images={privateImages}
-                        onSelect={handleLinkImages}
-                        alreadyLinkedIds={linkedImages.map(img => img.id)}
-                    />
-                )}
-
-                {isUploadOpen && (
-                    <UploadModal
-                        isOpen={isUploadOpen}
-                        onClose={() => setIsUploadOpen(false)}
-                        onUploadComplete={handleUploadComplete}
-                        initialPrompt={fullText}
-                        initialTags={tags}
-                    />
-                )}
-
-                {selectedImage && (
-                    <ImageDetailView
-                        isOpen={!!selectedImage}
-                        image={selectedImage}
-                        onClose={() => setSelectedImage(null)}
-                        user={user}
-                        onUpdateImage={(updated, deletedId) => {
-                            if (deletedId) {
-                                removeImageFromCache(deletedId);
-                                setSelectedImage(null);
-                            } else if (updated) {
-                                updateImageInCache(updated);
-                                setSelectedImage(updated);
-                            }
-                        }}
-                        onDeleteTag={() => { }} // Not implemented in this view context yet
-                    />
-                )}
             </div>
+
+            {isPickerOpen && (
+                <ImagePickerModal
+                    isOpen={isPickerOpen}
+                    onClose={() => setIsPickerOpen(false)}
+                    images={privateImages}
+                    onSelect={handleLinkImages}
+                    alreadyLinkedIds={linkedImages.map(img => img.id)}
+                />
+            )}
+
+            {isUploadOpen && (
+                <UploadModal
+                    isOpen={isUploadOpen}
+                    onClose={() => setIsUploadOpen(false)}
+                    onUploadComplete={handleUploadComplete}
+                    initialPrompt={fullText}
+                    initialTags={tags}
+                    user={user}
+                />
+            )}
+
+            {selectedImage && (
+                <ImageDetailView
+                    isOpen={!!selectedImage}
+                    image={selectedImage}
+                    onClose={() => setSelectedImage(null)}
+                    user={user}
+                    onUpdateImage={(updated, deletedId) => {
+                        if (deletedId) {
+                            removeImageFromCache(deletedId);
+                            setSelectedImage(null);
+                        } else if (updated) {
+                            updateImageInCache(updated);
+                            setSelectedImage(updated);
+                        }
+                    }}
+                    onDeleteTag={() => { }} // Not implemented in this view context yet
+                />
+            )}
         </>,
         document.getElementById('modal-root')
     );
