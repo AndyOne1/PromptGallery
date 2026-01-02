@@ -157,9 +157,12 @@ export default function CharacterDetailView({
             await charactersApi.linkImage(character.id, imageId);
             // Pin the image
             await charactersApi.pinImage(character.id, imageId);
+
+            // Fetch updated character and trigger reload in parent
+            const updatedCharacter = await charactersApi.getById(character.id);
+            onUpdate?.(updatedCharacter);
+
             setShowImagePicker(false);
-            // Trigger reload
-            onUpdate?.({ ...character, pinnedImageId: imageId });
             loadLinkedImages();
         } catch (err) {
             alert('Fehler beim Setzen des Bildes: ' + err.message);

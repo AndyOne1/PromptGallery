@@ -176,6 +176,10 @@ export default function Characters({ user }) {
                 isOpen={!!selectedCharacter}
                 onClose={() => setSelectedCharacter(null)}
                 onDelete={(id) => setDeleteConfirm(id)}
+                onUpdate={(updated) => {
+                    setCharacters(prev => prev.map(c => c.id === updated.id ? updated : c));
+                    setSelectedCharacter(updated);
+                }}
                 user={user}
             />
 

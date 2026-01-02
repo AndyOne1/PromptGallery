@@ -368,7 +368,7 @@ Beschreibe NUR die Person, NICHT die Umgebung oder den Hintergrund!`
         const grokResponse = await axios.post(
             OPENROUTER_API_URL,
             {
-                model: 'x-ai/grok-3-mini-beta',
+                model: 'x-ai/grok-4.1-fast',
                 messages: [
                     {
                         role: 'system',
