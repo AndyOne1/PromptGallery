@@ -17,7 +17,7 @@ export default function Prompts({ user }) {
     const [isDetailOpen, setIsDetailOpen] = useState(false);
     const [selectedPrompt, setSelectedPrompt] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [displayLimit, setDisplayLimit] = useState(10);
+    const [displayLimit, setDisplayLimit] = useState(30);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [promptToDelete, setPromptToDelete] = useState(null);
 

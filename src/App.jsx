@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
 import { Image, Wand2, MessageSquare, Layout, User } from 'lucide-react';
 import Gallery from './pages/Gallery';
@@ -8,7 +8,25 @@ import Characters from './pages/Characters';
 import Auth from './pages/Auth';
 import './App.css';
 
-import { DataProvider } from './context/DataContext';
+import { DataProvider, useData } from './context/DataContext';
+
+function DataInitializer({ user }) {
+  const { fetchImages, fetchPrompts, fetchCharacters } = useData();
+
+  useEffect(() => {
+    // Prefetch public images
+    fetchImages('public');
+
+    // Prefetch private data if user is logged in
+    if (user) {
+      fetchImages('private');
+      fetchPrompts();
+      fetchCharacters();
+    }
+  }, [user, fetchImages, fetchPrompts, fetchCharacters]);
+
+  return null;
+}
 
 function App() {
   const [user, setUser] = useState(() => {
@@ -24,6 +42,7 @@ function App() {
 
   return (
     <DataProvider user={user}>
+      <DataInitializer user={user} />
       <Router>
         <header className="main-nav glass">
           <div className="nav-container">

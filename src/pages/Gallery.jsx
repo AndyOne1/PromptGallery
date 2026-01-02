@@ -36,6 +36,7 @@ export default function Gallery({ user }) {
     const [characters, setCharacters] = useState([]);
     const [selectedCharacter, setSelectedCharacter] = useState(null);
     const [isLinking, setIsLinking] = useState(false);
+    const [displayLimit, setDisplayLimit] = useState(30);
 
     useEffect(() => {
         fetchImages(view);
@@ -145,6 +146,8 @@ export default function Gallery({ user }) {
         img.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()))
     );
 
+    const displayImages = filteredImages.slice(0, displayLimit);
+
     return (
         <>
             <div className="page-container animate-fade-in">
@@ -204,7 +207,7 @@ export default function Gallery({ user }) {
                     </div>
                 ) : filteredImages.length > 0 ? (
                     <div className="gallery-grid">
-                        {filteredImages.map(img => {
+                        {displayImages.map(img => {
                             const isSelected = selectedIds.includes(img.id);
                             return (
                                 <div
@@ -251,6 +254,14 @@ export default function Gallery({ user }) {
                         <p>Upload an image and let Grok analyze your prompts.</p>
                         <button className="btn-secondary" onClick={() => setIsUploadOpen(true)}>
                             Upload First Image
+                        </button>
+                    </div>
+                )}
+
+                {filteredImages.length > displayLimit && (
+                    <div className="load-more-container mt-8 flex justify-center">
+                        <button className="btn-secondary" onClick={() => setDisplayLimit(prev => prev + 30)}>
+                            Show More Images
                         </button>
                     </div>
                 )}
