@@ -309,7 +309,7 @@ Antworte NUR mit dem JSON-Objekt.`
     }
 };
 
-// Analyze image to extract character attributes using free vision model
+// Analyze image to extract character attributes using vision model
 export const analyzeImageForCharacter = async (apiKey, imageUrl) => {
     try {
         const response = await axios.post(
@@ -339,14 +339,14 @@ Gib ein JSON-Objekt mit folgenden Attributen zurück:
 - accessories: Sichtbare Accessoires
 - distinguishingMarks: Besondere Merkmale (Tattoos, Piercings, Narben etc.)
 
-Sei präzise und detailliert. Antworte NUR mit dem JSON-Objekt.`
+WICHTIG: Antworte NUR mit dem JSON-Objekt, ohne zusätzlichen Text davor oder danach!`
                     },
                     {
                         role: 'user',
                         content: [
                             {
                                 type: 'text',
-                                text: 'Analysiere diese Person und extrahiere die Charakter-Attribute. Fokussiere dich NUR auf die Person, nicht auf die Umgebung.'
+                                text: 'Analysiere diese Person und extrahiere die Charakter-Attribute. Antworte NUR mit einem validen JSON-Objekt.'
                             },
                             {
                                 type: 'image_url',
@@ -354,8 +354,8 @@ Sei präzise und detailliert. Antworte NUR mit dem JSON-Objekt.`
                             }
                         ]
                     }
-                ],
-                response_format: { type: 'json_object' }
+                ]
+                // Note: response_format not supported by Llama vision models
             },
             {
                 headers: {
@@ -368,7 +368,21 @@ Sei präzise und detailliert. Antworte NUR mit dem JSON-Objekt.`
         );
 
         const content = response.data.choices[0].message.content;
-        return typeof content === 'string' ? JSON.parse(content) : content;
+
+        // Try to parse JSON directly
+        if (typeof content === 'object') return content;
+
+        // Try to extract JSON from text response
+        try {
+            return JSON.parse(content);
+        } catch {
+            // Try to find JSON object in the response text
+            const jsonMatch = content.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                return JSON.parse(jsonMatch[0]);
+            }
+            throw new Error('Die Antwort konnte nicht als JSON interpretiert werden. Bitte versuche es erneut.');
+        }
     } catch (error) {
         console.error('Image analysis error:', error);
         throw error;
