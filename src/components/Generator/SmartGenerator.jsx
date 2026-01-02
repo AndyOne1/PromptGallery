@@ -73,6 +73,7 @@ export default function SmartGenerator({ onComplete, user, initialCharacter }) {
     const [safetyLevel, setSafetyLevel] = useState('sfw');
     const [ageLevel, setAgeLevel] = useState('young adult');
     const [useReference, setUseReference] = useState(false);
+    const [referenceGuidance, setReferenceGuidance] = useState('middle');
     const [referenceGender, setReferenceGender] = useState('');
     const [useCharacter, setUseCharacter] = useState(initialCharacter ? true : false);
     const [selectedCharacters, setSelectedCharacters] = useState(initialCharacter ? [initialCharacter] : []);
@@ -210,6 +211,7 @@ export default function SmartGenerator({ onComplete, user, initialCharacter }) {
                 safetyLevel,
                 ageLevel,
                 useReference,
+                referenceGuidance,
                 referenceGender
             });
 
@@ -434,6 +436,35 @@ export default function SmartGenerator({ onComplete, user, initialCharacter }) {
                             </button>
                         </div>
                     </div>
+
+                    {useReference && (
+                        <div className="modern-guidance-section animate-fade-in">
+                            <label className="text-xs text-dim mb-2 block uppercase letter-spacing-wide">Reference Guidance</label>
+                            <div className="safety-selector-modern glass">
+                                <button
+                                    className={`safety-btn sfw ${referenceGuidance === 'low' ? 'active' : ''}`}
+                                    onClick={() => setReferenceGuidance('low')}
+                                    title="Reference mentioned, full character description"
+                                >
+                                    LOW
+                                </button>
+                                <button
+                                    className={`safety-btn bypass ${referenceGuidance === 'middle' ? 'active' : ''}`}
+                                    onClick={() => setReferenceGuidance('middle')}
+                                    title="Stronger reference emphasis, fewer characters details"
+                                >
+                                    MID
+                                </button>
+                                <button
+                                    className={`safety-btn nsfw ${referenceGuidance === 'strict' ? 'active' : ''}`}
+                                    onClick={() => setReferenceGuidance('strict')}
+                                    title="Reference and Gender only, no character description"
+                                >
+                                    STRICT
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="modern-vibes-section">

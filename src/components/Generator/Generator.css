@@ -1904,3 +1904,36 @@
 .safety-btn.active.bypass {
     background: var(--accent-secondary);
 }
+
+.modern-guidance-section {
+    flex: 1.5;
+    min-width: 280px;
+}
+
+/* Ensure consistent guidance styling */
+.modern-guidance-section .safety-selector-modern {
+    background: rgba(139, 92, 246, 0.05);
+    border-color: rgba(139, 92, 246, 0.2);
+}
+
+.modern-guidance-section .safety-btn.active.sfw {
+    background: #4ade80; /* Low guidance - green */
+}
+
+.modern-guidance-section .safety-btn.active.bypass {
+    background: #60a5fa; /* Mid guidance - blue */
+}
+
+.modern-guidance-section .safety-btn.active.nsfw {
+    background: #f472b6; /* Strict guidance - pink/purple */
+}
+
+/* Animations */
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}

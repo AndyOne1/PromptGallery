@@ -222,7 +222,12 @@ export const generateSmartPrompt = async (apiKey, selections) => {
                         - If the input is specific, enhance it with professional photographic terms (e.g., "8k resolution", "volumetric lighting", "captured on 35mm film").
                         
                         REFERENCE IMAGE CONSTRAINTS:
-                        ${selections.useReference ? `- CRITICAL: The user has provided a reference image. You must output a prompt that specifically instructs the model to MATCH the reference image's subject, composition, and style exactly. Do not hallucinate new features.` : ''}
+                        ${selections.useReference ? `
+                        - Guidance Level: ${selections.referenceGuidance.toUpperCase()}:
+                           - 'LOW': Mention the reference image as a primary source for composition/lighting, but include the FULL character description (features, body, style) in the prompt.
+                           - 'MIDDLE': Stronger emphasis on matching the reference image. Reduce character details to only the most iconic features (e.g. hair and main outfit color).
+                           - 'STRICT': Mention ONLY the reference image and the gender (${selections.referenceGender || 'subject'}). DO NOT include any character descriptions from the instruction or tags. The reference image is the SOLE source of truth for the subject's appearance.
+                        - CRITICAL: The user has provided a reference image. You must output a prompt that specifically instructs the model to MATCH the reference image's subject, composition, and style exactly. Do not hallucinate new features.` : ''}
                         ${selections.referenceGender ? `- The subject in the reference image is a ${selections.referenceGender.toUpperCase()}. Ensure the prompt reflects this.` : ''}
                         `
                     },
@@ -232,7 +237,7 @@ export const generateSmartPrompt = async (apiKey, selections) => {
                         Selected Vibes: ${selections.vibes.join(', ')}
                         Safety Level: ${selections.safetyLevel}
                         Age Target: ${selections.ageLevel}
-                        ${selections.useReference ? `[x] Use Reference Image (Maintain consistency)` : ''}
+                        ${selections.useReference ? `[x] Use Reference Image (Maintain consistency) - Guidance: ${selections.referenceGuidance}` : ''}
                         ${selections.referenceGender ? `[x] Reference Subject Gender: ${selections.referenceGender}` : ''}
                         
                         Craft the masterpiece.`
