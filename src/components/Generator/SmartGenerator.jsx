@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Wand2, Sparkles, Send, Shield, RefreshCcw, Check, AlertTriangle, User, Plus, X, ImageIcon, ChevronDown, Camera, Share2, History, ZapOff } from 'lucide-react';
+import { Wand2, Sparkles, Send, Shield, RefreshCcw, Check, AlertTriangle, User, Plus, X, ImageIcon, ChevronDown, Camera, Share2, History, ZapOff, MapPin, Maximize, Sliders } from 'lucide-react';
 import { generateSmartPrompt } from '../../services/openrouter';
 import { charactersApi } from '../../services/api';
 
@@ -62,6 +62,94 @@ const VIBE_CATEGORIES = {
                 { name: 'Screenshots aus Videos', tags: 'Video-Frame, unscharf, komprimiert, video grab' },
                 { name: 'Gelöschte Version', tags: 'Komprimiert, Artefakte, schlechte Qualität, low res' },
                 { name: 'Niedrige Auflösung', tags: 'Web-Optimierung, Pixelierung, Kompression, poor quality' }
+            ]
+        }
+    },
+    'Perspective': {
+        icon: Maximize,
+        subcategories: {
+            'Kamera-Winkel': [
+                { name: 'POV', tags: 'point of view, first person perspective, through eyes' },
+                { name: 'Bird Eye', tags: 'view from above, overhead shot, top down, looking down' },
+                { name: 'Low Angle', tags: 'view from below, looking up, worms eye view, powerful perspective' },
+                { name: 'Side Profile', tags: 'profile view, from the side, lateral perspective' },
+                { name: 'Eye Level', tags: 'natural perspective, eye level shot, direct look' },
+                { name: 'Wide Angle', tags: 'wide shot, panoramic, spacious view, surroundings visible' },
+                { name: 'Close Up', tags: 'macro detail, tight crop, focal point on face or object' }
+            ]
+        }
+    },
+    'Places': {
+        icon: MapPin,
+        subcategories: {
+            'Öffentlich / Draußen': [
+                { name: 'Straße', tags: 'Asphalt, Gehweg, Autos, Stadtbild, street setting' },
+                { name: 'Park', tags: 'Bäume, Gras, Bank, Natur, park environment' },
+                { name: 'Strand', tags: 'Sand, Meer, Sonne, Wellen, beach atmosphere' },
+                { name: 'Spielplatz', tags: 'Schaukel, Rutsche, Kinderausrüstung, playground vibe' },
+                { name: 'Bahnhof', tags: 'Gleise, Bahnsteig, Ankunft, train station' },
+                { name: 'Flughafen', tags: 'Gate, Koffer, Reise-Atmosphäre, airport terminal' },
+                { name: 'Supermarkt', tags: 'Regale, Einkaufswagen, Produkte, grocery store' },
+                { name: 'Einkaufszentrum', tags: 'Läden, Menschen, Food Court, mall setting' },
+                { name: 'Bibliothek', tags: 'Bücher, Stille, Tische, library interior' },
+                { name: 'Café', tags: 'Tisch, Tasse, Laptop, Menschen, coffee shop' }
+            ],
+            'Privat / Drinnen': [
+                { name: 'Wohnzimmer', tags: 'Sofa, TV, Teppich, Deko, living room' },
+                { name: 'Schlafzimmer', tags: 'Bett, Kissen, Nachttisch, bedroom' },
+                { name: 'Badezimmer', tags: 'Wanne, Waschbecken, Spiegel, bathroom' },
+                { name: 'Küche', tags: 'Herd, Spüle, Schränke, kitchen interior' },
+                { name: 'Flur', tags: 'Tür, Garderobe, Spiegel, hallway' },
+                { name: 'Balkon', tags: 'Pflanzen, Stadtblick, Sonne, balcony' },
+                { name: 'Terrasse', tags: 'Gartenmöbel, Grill, Pflanzen, terrace' },
+                { name: 'Arbeitszimmer', tags: 'Schreibtisch, Computer, Bücher, office space' },
+                { name: 'Kinderzimmer', tags: 'Spielzeug, Bett, Poster, kids room' },
+                { name: 'Waschküche', tags: 'Waschmaschine, Wäscheständer, laundry room' }
+            ],
+            'Urlaub / Reise': [
+                { name: 'Hotelzimmer', tags: 'Bett, Vorhang, Standard-Deko, hotel room' },
+                { name: 'Hotel/Pool', tags: 'Liegestuhl, Wasser, Handtuch, hotel resort' },
+                { name: 'Flugzeug', tags: 'Sitz, Fenster, Wolken, airplane interior' },
+                { name: 'Mietauto', tags: 'Fahrersitz, Lenkrad, Straße, rental car shot' },
+                { name: 'Strandbar', tags: 'Sand, Getränk, Palme, beach bar vibe' },
+                { name: 'Aussichtspunkt', tags: 'Panorama, Berge, Meer, viewpoint' },
+                { name: 'Hist. Stätte', tags: 'Building, monument, tourists, historical site' },
+                { name: 'Markt', tags: 'Stände, Essen, Menschen, local market' }
+            ]
+        }
+    },
+    'Camera': {
+        icon: Sliders,
+        subcategories: {
+            'Amateur-Traits': [
+                { name: 'Verwackelt', tags: 'Motion blur, shaky camera, unsteadiness' },
+                { name: 'Falscher Fokus', tags: 'Missed focus, bokeh on wrong spot, slightly blurry subject' },
+                { name: 'Unterbelichtet', tags: 'Under-exposed, dark shadows, moody silhouette' },
+                { name: 'Überbelichtet', tags: 'Over-exposed, blown highlights, washed out' },
+                { name: 'Rauschen', tags: 'High ISO, film grain/noise, grit' },
+                { name: 'Komprimiert', tags: 'JPEG artifacts, web compression, low bit-rate look' },
+                { name: 'Niedrige Auflösung', tags: 'Low res, pixelated, soft edges' },
+                { name: 'Beschnitten', tags: 'Bad cropping, severed edges, amateur framing' },
+                { name: 'Fischauge', tags: 'Fisheye distortion, smartphone wide lens, curved edges' },
+                { name: 'Vignettierung', tags: 'Dark corners, vignetted edges, focus on center' }
+            ],
+            'Filter-Effekte': [
+                { name: 'Filmkorn', tags: 'Analog grain, filmic texture, retro noise' },
+                { name: 'Vignette', tags: 'Dark vignette, cinematic edges' },
+                { name: 'Fade', tags: 'Faded colors, washed out blacks, vintage lift' },
+                { name: 'Cross-Process', tags: 'Cross-processed colors, high contrast, surreal tints' },
+                { name: 'Sepia', tags: 'Sepia tone, brownish tint, antique' },
+                { name: 'B&W', tags: 'Black and white, monochrome, high contrast BW' },
+                { name: 'Duotone', tags: 'Two-tone color grade, duotone artistic style' },
+                { name: 'Schmutz', tags: 'Scratches, dust, stains, old photo texture' }
+            ],
+            'Licht-Stimmung': [
+                { name: 'Hart', tags: 'Harsh shadows, direct light, high contrast lighting' },
+                { name: 'Weich', tags: 'Soft diffused light, flattering shadows, gentle glow' },
+                { name: 'Niedrig', tags: 'Low light, intimate ambiance, dim surroundings' },
+                { name: 'Natürlich', tags: 'Natural light, window illumination, ambient sun' },
+                { name: 'Künstlich', tags: 'Artificial lighting, lamp light, overhead bulb' },
+                { name: 'Mixed', tags: 'Mixed lighting, warm and cool tones combined' }
             ]
         }
     }
