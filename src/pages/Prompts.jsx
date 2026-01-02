@@ -16,10 +16,12 @@ export default function Prompts({ user }) {
     const [isUploadOpen, setIsUploadOpen] = useState(false);
     const [isDetailOpen, setIsDetailOpen] = useState(false);
     const [selectedPrompt, setSelectedPrompt] = useState(null);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [displayLimit, setDisplayLimit] = useState(30);
-    const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [promptToDelete, setPromptToDelete] = useState(null);
+    const [excludeCharacters, setExcludeCharacters] = useState(false);
+
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
 
     useEffect(() => {
         fetchPrompts();
@@ -105,6 +107,12 @@ export default function Prompts({ user }) {
                 return content.includes(query) || tags.includes(query);
             });
         }
+        if (excludeCharacters) {
+            result = result.filter(p => {
+                const tags = p.refinedTags || p.tags || [];
+                return !tags.includes('Character Prompt');
+            });
+        }
         return result;
     }, [sortedPrompts, searchQuery]);
 
@@ -130,6 +138,16 @@ export default function Prompts({ user }) {
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
+                </div>
+                <div className="filter-options flex-row gap-4">
+                    <label className="flex-row gap-2 clickable text-sm">
+                        <input
+                            type="checkbox"
+                            checked={excludeCharacters}
+                            onChange={(e) => setExcludeCharacters(e.target.checked)}
+                        />
+                        <span>Exclude Character Prompts</span>
+                    </label>
                 </div>
             </div>
 

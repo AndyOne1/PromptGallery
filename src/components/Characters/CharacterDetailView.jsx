@@ -6,6 +6,8 @@ import {
 } from 'lucide-react';
 import { generateSmartPrompt } from '../../services/openrouter';
 import { promptsApi, charactersApi, galleryApi } from '../../services/api';
+import { useData } from '../../context/DataContext';
+import ImageDetailView from '../Gallery/ImageDetailView';
 import './CharacterDetailView.css';
 
 const ATTRIBUTE_LABELS = {
@@ -51,12 +53,21 @@ export default function CharacterDetailView({
     const [showImagePicker, setShowImagePicker] = useState(false);
     const [galleryImages, setGalleryImages] = useState([]);
     const [isLoadingGallery, setIsLoadingGallery] = useState(false);
+    const [selectedDetailImage, setSelectedDetailImage] = useState(null);
+
+    const { updateImageInCache, removeImageFromCache } = useData();
 
     useEffect(() => {
-        if (character?.id && isOpen) {
-            loadLinkedImages();
-            loadRecentPrompts();
+        if (isOpen) {
+            document.body.classList.add('modal-open');
+            if (character?.id) {
+                loadLinkedImages();
+                loadRecentPrompts();
+            }
+        } else {
+            document.body.classList.remove('modal-open');
         }
+        return () => document.body.classList.remove('modal-open');
     }, [character?.id, isOpen]);
 
     const loadLinkedImages = async () => {
@@ -162,232 +173,255 @@ export default function CharacterDetailView({
 
     if (!isOpen || !character) return null;
 
-    const modal = (
-        <div className="modal-overlay character-modal-overlay" onClick={onClose}>
-            <div
-                className="character-detail-landscape glass"
-                onClick={e => e.stopPropagation()}
-            >
-                {/* Close Button */}
-                <button className="modal-close-btn" onClick={onClose}>
-                    <X size={18} />
-                </button>
+    return createPortal(
+        <>
+            <div className="modal-overlay character-modal-overlay" onClick={onClose}>
+                <div
+                    className="character-detail-landscape glass"
+                    onClick={e => e.stopPropagation()}
+                >
+                    {/* Close Button */}
+                    <button className="modal-close-btn" onClick={onClose}>
+                        <X size={18} />
+                    </button>
 
-                {/* Header - Just name, no tags */}
-                <div className="detail-header flex-col">
-                    <h2 className="title-gradient">{character.name}</h2>
-                    <div className="creator-info-mini flex-row align-center gap-1 mt-1">
-                        <User size={12} className="text-dim" />
-                        <span className="text-dim text-xs">Created by: {character.userName || (character.userId === user?.id ? 'You' : 'Unknown')}</span>
-                    </div>
-                </div>
-
-                {/* 3-Column Layout */}
-                <div className="detail-columns">
-                    {/* Left: Portrait + Tags */}
-                    <div className="detail-column-left">
-                        <div className="large-portrait clickable" onClick={openImagePicker}>
-                            {character.pinnedImage?.url ? (
-                                <img src={character.pinnedImage.url} alt={character.name} />
-                            ) : (
-                                <div className="portrait-placeholder-large">
-                                    <User size={80} />
-                                </div>
-                            )}
-                            <div className="portrait-edit-overlay">
-                                <Camera size={24} />
-                                <span>Foto ändern</span>
-                            </div>
+                    {/* Header - Just name, no tags */}
+                    <div className="detail-header flex-col">
+                        <h2 className="title-gradient">{character.name}</h2>
+                        <div className="creator-info-mini flex-row align-center gap-1 mt-1">
+                            <User size={12} className="text-dim" />
+                            <span className="text-dim text-xs">Created by: {character.userName || (character.userId === user?.id ? 'You' : 'Unknown')}</span>
                         </div>
-
-                        {/* Tags moved here below portrait */}
-                        <div className="portrait-tags">
-                            {character.attributes?.age && <span className="tag">{character.attributes.age}</span>}
-                            {character.attributes?.gender && <span className="tag">{character.attributes.gender}</span>}
-                        </div>
-
-                        <button
-                            className="btn-secondary btn-danger mt-4 w-full"
-                            onClick={() => onDelete?.(character.id)}
-                        >
-                            <Trash2 size={16} />
-                            <span>Delete Character</span>
-                        </button>
                     </div>
 
-                    {/* Center: Scrollable Info */}
-                    <div className="detail-column-center detail-scroll">
-                        <CollapsibleSection
-                            title="Attributes"
-                            defaultOpen={true}
-                            icon={<User size={16} />}
-                        >
-                            <div className="attributes-grid-compact">
-                                {Object.entries(character.attributes || {}).map(([key, value]) => (
-                                    <div key={key} className="attribute-item">
-                                        <span className="attr-label">{ATTRIBUTE_LABELS[key] || key}</span>
-                                        <span className="attr-value">{value || '—'}</span>
+                    {/* 3-Column Layout */}
+                    <div className="detail-columns">
+                        {/* Left: Portrait + Tags */}
+                        <div className="detail-column-left">
+                            <div className="large-portrait clickable" onClick={openImagePicker}>
+                                {character.pinnedImage?.url ? (
+                                    <img src={character.pinnedImage.url} alt={character.name} />
+                                ) : (
+                                    <div className="portrait-placeholder-large">
+                                        <User size={80} />
                                     </div>
-                                ))}
+                                )}
+                                <div className="portrait-edit-overlay">
+                                    <Camera size={24} />
+                                    <span>Foto ändern</span>
+                                </div>
                             </div>
-                        </CollapsibleSection>
 
-                        {character.prompt && (
-                            <CollapsibleSection
-                                title="Character Prompt"
-                                defaultOpen={false}
-                                icon={<Sparkles size={16} />}
-                            >
-                                <p className="prompt-text-compact">{character.prompt}</p>
-                                <button
-                                    className="btn-secondary small mt-3"
-                                    onClick={() => handleCopy(character.prompt)}
-                                >
-                                    {copiedId === 'prompt' ? <Check size={14} /> : <Copy size={14} />}
-                                    <span>Copy</span>
-                                </button>
-                            </CollapsibleSection>
-                        )}
-                    </div>
+                            {/* Tags moved here below portrait */}
+                            <div className="portrait-tags">
+                                {character.attributes?.age && <span className="tag">{character.attributes.age}</span>}
+                                {character.attributes?.gender && <span className="tag">{character.attributes.gender}</span>}
+                            </div>
 
-                    {/* Right: Tabs */}
-                    <div className="detail-column-right">
-                        <div className="tab-nav">
                             <button
-                                className={`tab-btn ${activeTab === 'generator' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('generator')}
+                                className="btn-secondary btn-danger mt-4 w-full"
+                                onClick={() => onDelete?.(character.id)}
                             >
-                                <Sparkles size={16} />
-                                <span>Generator</span>
-                            </button>
-                            <button
-                                className={`tab-btn ${activeTab === 'gallery' ? 'active' : ''}`}
-                                onClick={() => setActiveTab('gallery')}
-                            >
-                                <ImageIcon size={16} />
-                                <span>Gallery</span>
+                                <Trash2 size={16} />
+                                <span>Delete Character</span>
                             </button>
                         </div>
 
-                        <div className="tab-content detail-scroll">
-                            {activeTab === 'generator' && (
-                                <div className="generator-tab">
-                                    <p className="tab-intro">
-                                        Erstelle Szenen und Prompts mit diesem Charakter.
-                                    </p>
-                                    <textarea
-                                        className="scene-input"
-                                        placeholder="z.B. 'Ein Portrait im Film Noir Stil' oder 'Character Sheet mit verschiedenen Posen'"
-                                        value={instruction}
-                                        onChange={(e) => setInstruction(e.target.value)}
-                                        disabled={isGenerating}
-                                    />
-                                    <button
-                                        className="btn-primary w-full"
-                                        onClick={handleGenerateScene}
-                                        disabled={!instruction.trim() || isGenerating}
-                                    >
-                                        {isGenerating ? (
-                                            <Loader2 size={18} className="spin" />
-                                        ) : (
-                                            <Send size={18} />
-                                        )}
-                                        <span>Generate & Save</span>
-                                    </button>
+                        {/* Center: Scrollable Info */}
+                        <div className="detail-column-center detail-scroll">
+                            <CollapsibleSection
+                                title="Attributes"
+                                defaultOpen={true}
+                                icon={<User size={16} />}
+                            >
+                                <div className="attributes-grid-compact">
+                                    {Object.entries(character.attributes || {}).map(([key, value]) => (
+                                        <div key={key} className="attribute-item">
+                                            <span className="attr-label">{ATTRIBUTE_LABELS[key] || key}</span>
+                                            <span className="attr-value">{value || '—'}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CollapsibleSection>
 
-                                    {/* Recent Prompts */}
-                                    {recentPrompts.length > 0 && (
-                                        <div className="recent-prompts">
-                                            <h4>Letzte Prompts</h4>
-                                            <div className="prompt-tiles">
-                                                {recentPrompts.map(p => (
-                                                    <div
-                                                        key={p.id}
-                                                        className="prompt-tile"
-                                                        onClick={() => handleCopy(p.content)}
-                                                        title={p.content}
-                                                    >
-                                                        <span className="tile-title">{p.title || 'Prompt'}</span>
-                                                        <span className="tile-preview">{p.content?.slice(0, 60)}...</span>
+                            {character.prompt && (
+                                <CollapsibleSection
+                                    title="Character Prompt"
+                                    defaultOpen={false}
+                                    icon={<Sparkles size={16} />}
+                                >
+                                    <p className="prompt-text-compact">{character.prompt}</p>
+                                    <button
+                                        className="btn-secondary small mt-3"
+                                        onClick={() => handleCopy(character.prompt)}
+                                    >
+                                        {copiedId === 'prompt' ? <Check size={14} /> : <Copy size={14} />}
+                                        <span>Copy</span>
+                                    </button>
+                                </CollapsibleSection>
+                            )}
+                        </div>
+
+                        {/* Right: Tabs */}
+                        <div className="detail-column-right">
+                            <div className="tab-nav">
+                                <button
+                                    className={`tab-btn ${activeTab === 'generator' ? 'active' : ''}`}
+                                    onClick={() => setActiveTab('generator')}
+                                >
+                                    <Sparkles size={16} />
+                                    <span>Generator</span>
+                                </button>
+                                <button
+                                    className={`tab-btn ${activeTab === 'gallery' ? 'active' : ''}`}
+                                    onClick={() => setActiveTab('gallery')}
+                                >
+                                    <ImageIcon size={16} />
+                                    <span>Gallery</span>
+                                </button>
+                            </div>
+
+                            <div className="tab-content detail-scroll">
+                                {activeTab === 'generator' && (
+                                    <div className="generator-tab">
+                                        <p className="tab-intro">
+                                            Erstelle Szenen und Prompts mit diesem Charakter.
+                                        </p>
+                                        <textarea
+                                            className="scene-input"
+                                            placeholder="z.B. 'Ein Portrait im Film Noir Stil' oder 'Character Sheet mit verschiedenen Posen'"
+                                            value={instruction}
+                                            onChange={(e) => setInstruction(e.target.value)}
+                                            disabled={isGenerating}
+                                        />
+                                        <button
+                                            className="btn-primary w-full"
+                                            onClick={handleGenerateScene}
+                                            disabled={!instruction.trim() || isGenerating}
+                                        >
+                                            {isGenerating ? (
+                                                <Loader2 size={18} className="spin" />
+                                            ) : (
+                                                <Send size={18} />
+                                            )}
+                                            <span>Generate & Save</span>
+                                        </button>
+
+                                        {/* Recent Prompts */}
+                                        {recentPrompts.length > 0 && (
+                                            <div className="recent-prompts">
+                                                <h4>Letzte Prompts</h4>
+                                                <div className="prompt-tiles">
+                                                    {recentPrompts.map(p => (
+                                                        <div
+                                                            key={p.id}
+                                                            className="prompt-tile"
+                                                            onClick={() => handleCopy(p.content)}
+                                                            title={p.content}
+                                                        >
+                                                            <span className="tile-title">{p.title || 'Prompt'}</span>
+                                                            <span className="tile-preview">{p.content?.slice(0, 60)}...</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {activeTab === 'gallery' && (
+                                    <div className="gallery-tab">
+                                        {isLoadingImages ? (
+                                            <div className="loading-mini">
+                                                <Loader2 size={24} className="spin" />
+                                            </div>
+                                        ) : linkedImages.length > 0 ? (
+                                            <div className="mini-gallery-grid">
+                                                {linkedImages.map(img => (
+                                                    <div key={img.id} className="mini-gallery-item" onClick={() => setSelectedDetailImage(img)}>
+                                                        <img src={img.url} alt="" />
+                                                        {img.isPinned && (
+                                                            <div className="pin-badge">
+                                                                <Pin size={12} />
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 ))}
                                             </div>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-
-                            {activeTab === 'gallery' && (
-                                <div className="gallery-tab">
-                                    {isLoadingImages ? (
-                                        <div className="loading-mini">
-                                            <Loader2 size={24} className="spin" />
-                                        </div>
-                                    ) : linkedImages.length > 0 ? (
-                                        <div className="mini-gallery-grid">
-                                            {linkedImages.map(img => (
-                                                <div key={img.id} className="mini-gallery-item">
-                                                    <img src={img.url} alt="" />
-                                                    {img.isPinned && (
-                                                        <div className="pin-badge">
-                                                            <Pin size={12} />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <div className="empty-gallery">
-                                            <ImageIcon size={32} />
-                                            <p>Keine Bilder verknüpft</p>
-                                            <button className="btn-secondary small" onClick={openImagePicker}>
-                                                <Plus size={14} />
-                                                <span>Bild hinzufügen</span>
-                                            </button>
-                                        </div>
-                                    )}
-                                </div>
-                            )}
+                                        ) : (
+                                            <div className="empty-gallery">
+                                                <ImageIcon size={32} />
+                                                <p>Keine Bilder verknüpft</p>
+                                                <button className="btn-secondary small" onClick={openImagePicker}>
+                                                    <Plus size={14} />
+                                                    <span>Bild hinzufügen</span>
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Image Picker Modal */}
             {showImagePicker && (
-                <div className="image-picker-modal glass" onClick={e => e.stopPropagation()}>
-                    <div className="picker-header">
-                        <h3>Bild auswählen</h3>
-                        <button className="modal-close-btn" onClick={() => setShowImagePicker(false)}>
-                            <X size={18} />
-                        </button>
-                    </div>
-                    <div className="picker-content detail-scroll">
-                        {isLoadingGallery ? (
-                            <div className="loading-mini">
-                                <Loader2 size={32} className="spin" />
-                            </div>
-                        ) : galleryImages.length > 0 ? (
-                            <div className="picker-grid">
-                                {galleryImages.map(img => (
-                                    <div
-                                        key={img.id}
-                                        className="picker-item"
-                                        onClick={() => handleSelectImage(img.id)}
-                                    >
-                                        <img src={img.url} alt="" />
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-dim text-center">Keine Bilder in deiner Galerie</p>
-                        )}
+                <div className="modal-overlay" onClick={() => setShowImagePicker(false)}>
+                    <div className="image-picker-modal glass" onClick={e => e.stopPropagation()}>
+                        <div className="picker-header">
+                            <h3>Bild auswählen</h3>
+                            <button className="modal-close-btn" onClick={() => setShowImagePicker(false)}>
+                                <X size={18} />
+                            </button>
+                        </div>
+                        <div className="picker-content detail-scroll">
+                            {isLoadingGallery ? (
+                                <div className="loading-mini">
+                                    <Loader2 size={32} className="spin" />
+                                </div>
+                            ) : galleryImages.length > 0 ? (
+                                <div className="picker-grid">
+                                    {galleryImages.map(img => (
+                                        <div
+                                            key={img.id}
+                                            className="picker-item"
+                                            onClick={() => handleSelectImage(img.id)}
+                                        >
+                                            <img src={img.url} alt="" />
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <p className="text-dim text-center">Keine Bilder in deiner Galerie</p>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
-        </div>
-    );
 
-    return createPortal(modal, document.body);
+            {selectedDetailImage && (
+                <ImageDetailView
+                    isOpen={!!selectedDetailImage}
+                    image={selectedDetailImage}
+                    onClose={() => setSelectedDetailImage(null)}
+                    user={user}
+                    onUpdateImage={(updated, deletedId) => {
+                        if (deletedId) {
+                            removeImageFromCache(deletedId);
+                            loadLinkedImages();
+                            setSelectedDetailImage(null);
+                        } else if (updated) {
+                            updateImageInCache(updated);
+                            loadLinkedImages();
+                            setSelectedDetailImage(updated);
+                        }
+                    }}
+                    onDeleteTag={() => { }}
+                />
+            )}
+        </>,
+        document.getElementById('modal-root')
+    );
 }
 

@@ -59,6 +59,10 @@ export const promptsApi = {
     delete: async (id) => {
         const response = await axios.delete(`${API_BASE}/prompts?id=${id}`, { headers: getAuthHeaders() });
         return response.data;
+    },
+    update: async (id, data) => {
+        const response = await axios.patch(`${API_BASE}/prompts`, { id, ...data }, { headers: getAuthHeaders() });
+        return response.data;
     }
 };
 

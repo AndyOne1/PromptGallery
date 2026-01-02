@@ -17,7 +17,9 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
     const [isLoadingPrompts, setIsLoadingPrompts] = useState(false);
     const [isSavingPrompt, setIsSavingPrompt] = useState(false);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
-    const { addPromptToCache } = useData();
+    const [isEditingTitle, setIsEditingTitle] = useState(false);
+    const [editedTitle, setEditedTitle] = useState('');
+    const { addPromptToCache, updateImageInCache, privateImages } = useData();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -101,6 +103,35 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
         });
     };
 
+    const handleSaveTitle = async () => {
+        if (!editedTitle.trim()) return;
+        try {
+            const updated = await galleryApi.update(image.id, { title: editedTitle });
+            onUpdateImage(updated);
+            setIsEditingTitle(false);
+
+            // Sync with other images with same prompt?
+            const normalizedPrompt = normalizePromptText(image.prompt);
+            const otherImages = privateImages.filter(img =>
+                img.id !== image.id && normalizePromptText(img.prompt) === normalizedPrompt
+            );
+
+            if (otherImages.length > 0) {
+                const shouldSync = window.confirm(`Update the title for all ${otherImages.length} other images with the same prompt too?`);
+                if (shouldSync) {
+                    const syncPromises = otherImages.map(img =>
+                        galleryApi.update(img.id, { title: editedTitle })
+                    );
+                    const updatedImages = await Promise.all(syncPromises);
+                    updatedImages.forEach(img => updateImageInCache(img));
+                }
+            }
+        } catch (err) {
+            console.error('Failed to update title:', err);
+            alert('Failed to update title');
+        }
+    };
+
     const modalContent = (
         <div className="modal-overlay" onClick={onClose}>
             <div className="detail-modal glass animate-fade-in" onClick={e => e.stopPropagation()}>
@@ -112,13 +143,29 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
                     <div className="detail-info-section">
                         <header className="detail-header">
                             <div className="flex-col">
-                                {image.title ? (
-                                    <>
-                                        <h2 className="title-gradient">{image.title}</h2>
-                                        <p className="image-description-sub">{image.description}</p>
-                                    </>
+                                {isEditingTitle ? (
+                                    <div className="flex-row gap-2 w-full mb-2">
+                                        <input
+                                            type="text"
+                                            className="title-edit-input glass w-full"
+                                            value={editedTitle}
+                                            onChange={(e) => setEditedTitle(e.target.value)}
+                                            autoFocus
+                                            onKeyDown={(e) => e.key === 'Enter' && handleSaveTitle()}
+                                        />
+                                        <button className="btn-primary small" onClick={handleSaveTitle}><Check size={16} /></button>
+                                        <button className="btn-secondary small" onClick={() => setIsEditingTitle(false)}><X size={16} /></button>
+                                    </div>
                                 ) : (
-                                    <h2 className="title-gradient">{image.description}</h2>
+                                    <>
+                                        <h2 className="title-gradient clickable" onClick={() => {
+                                            if (isOwner) {
+                                                setEditedTitle(image.title || image.description);
+                                                setIsEditingTitle(true);
+                                            }
+                                        }} title={isOwner ? "Click to rename" : ""}>{image.title || image.description}</h2>
+                                        {image.title && <p className="image-description-sub">{image.description}</p>}
+                                    </>
                                 )}
                                 {isOwner && (
                                     <div className="status-row">

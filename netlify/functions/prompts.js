@@ -64,6 +64,29 @@ export const handler = async (event) => {
             return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
         }
 
+        // PATCH: Update a prompt (rename, etc.)
+        if (event.httpMethod === 'PATCH') {
+            const body = JSON.parse(event.body);
+            const { id, ...updateData } = body;
+
+            if (!id) return { statusCode: 400, headers, body: JSON.stringify({ error: 'ID required' }) };
+
+            const [updatedItem] = await db.update(savedPrompts)
+                .set(updateData)
+                .where(
+                    and(
+                        eq(savedPrompts.id, parseInt(id)),
+                        eq(savedPrompts.userId, user.userId)
+                    )
+                ).returning();
+
+            if (!updatedItem) {
+                return { statusCode: 404, headers, body: JSON.stringify({ error: 'Item not found or unauthorized' }) };
+            }
+
+            return { statusCode: 200, headers, body: JSON.stringify(updatedItem) };
+        }
+
         return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method Not Allowed' }) };
 
     } catch (error) {

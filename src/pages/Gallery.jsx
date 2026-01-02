@@ -39,6 +39,10 @@ export default function Gallery({ user }) {
     const [displayLimit, setDisplayLimit] = useState(30);
 
     useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
+
+    useEffect(() => {
         fetchImages(view);
     }, [view, user, fetchImages]);
 

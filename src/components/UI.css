@@ -140,3 +140,18 @@
 .w-full {
     width: 100%;
 }
+.title-edit-input {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--accent-primary);
+    color: var(--text-main);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    outline: none;
+    font-family: inherit;
+}
+
+.text-sm {
+    font-size: 0.875rem;
+}
