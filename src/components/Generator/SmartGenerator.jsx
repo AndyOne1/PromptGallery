@@ -18,11 +18,33 @@ export default function SmartGenerator({ onComplete, user, initialCharacter }) {
     const [selectedCharacters, setSelectedCharacters] = useState(initialCharacter ? [initialCharacter] : []);
     const [characters, setCharacters] = useState([]);
     const [isGenerating, setIsGenerating] = useState(false);
+
+    // UI Popover States
+    const [showCharPopover, setShowCharPopover] = useState(false);
+    const [showRefPopover, setShowRefPopover] = useState(false);
+
     const textareaRef = useRef(null);
+    const charPopoverRef = useRef(null);
+    const refPopoverRef = useRef(null);
 
     useEffect(() => {
         loadCharacters();
     }, [user]);
+
+    // Click outside handler
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (charPopoverRef.current && !charPopoverRef.current.contains(event.target)) {
+                setShowCharPopover(false);
+            }
+            if (refPopoverRef.current && !refPopoverRef.current.contains(event.target)) {
+                setShowRefPopover(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const loadCharacters = async () => {
         if (!user) {
@@ -168,10 +190,21 @@ export default function SmartGenerator({ onComplete, user, initialCharacter }) {
             <div className="smart-controls-modern">
                 <div className="modern-toggles-row">
                     {/* Character Toggle & Popover */}
-                    <div className="modern-popover-group">
+                    <div className="modern-popover-group" ref={charPopoverRef}>
                         <button
                             className={`modern-toggle-btn ${useCharacter ? 'active' : ''}`}
-                            onClick={() => setUseCharacter(!useCharacter)}
+                            onClick={() => {
+                                if (showCharPopover) {
+                                    setShowCharPopover(false);
+                                } else {
+                                    if (!useCharacter) {
+                                        setUseCharacter(true);
+                                        setShowCharPopover(true);
+                                    } else {
+                                        setUseCharacter(false);
+                                    }
+                                }
+                            }}
                         >
                             <User size={18} />
                             <span>Characters</span>
@@ -180,11 +213,11 @@ export default function SmartGenerator({ onComplete, user, initialCharacter }) {
                             )}
                         </button>
 
-                        {useCharacter && (
+                        {showCharPopover && (
                             <div className="modern-popover glass animate-scale-in">
                                 <div className="popover-header">
                                     <span>Select Characters</span>
-                                    <X size={14} className="clickable" onClick={() => setUseCharacter(false)} />
+                                    <X size={14} className="clickable" onClick={() => setShowCharPopover(false)} />
                                 </div>
                                 <div className="popover-body character-list-mini">
                                     {characters.length > 0 ? (
@@ -212,10 +245,21 @@ export default function SmartGenerator({ onComplete, user, initialCharacter }) {
                     </div>
 
                     {/* Reference Image Toggle & Popover */}
-                    <div className="modern-popover-group">
+                    <div className="modern-popover-group" ref={refPopoverRef}>
                         <button
                             className={`modern-toggle-btn ${useReference ? 'active' : ''}`}
-                            onClick={() => setUseReference(!useReference)}
+                            onClick={() => {
+                                if (showRefPopover) {
+                                    setShowRefPopover(false);
+                                } else {
+                                    if (!useReference) {
+                                        setUseReference(true);
+                                        setShowRefPopover(true);
+                                    } else {
+                                        setUseReference(false);
+                                    }
+                                }
+                            }}
                         >
                             <ImageIcon size={18} />
                             <span>Reference</span>
@@ -224,11 +268,11 @@ export default function SmartGenerator({ onComplete, user, initialCharacter }) {
                             )}
                         </button>
 
-                        {useReference && (
+                        {showRefPopover && (
                             <div className="modern-popover glass animate-scale-in">
                                 <div className="popover-header">
                                     <span>Subject Gender</span>
-                                    <X size={14} className="clickable" onClick={() => setUseReference(false)} />
+                                    <X size={14} className="clickable" onClick={() => setShowRefPopover(false)} />
                                 </div>
                                 <div className="popover-body genders-list-mini">
                                     <button
