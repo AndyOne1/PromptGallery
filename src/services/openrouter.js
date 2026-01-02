@@ -149,10 +149,15 @@ export const generateFinalPrompt = async (apiKey, selections) => {
                         Nano Banana Pro works best with natural language, full sentences, and specific structures.
                         
                         STRUCTURE (Golden Circle Principle):
-                        1. Subject & Main Person: Detailed description of who/what is the focus.
-                        2. Environment & Setting: Where and in what context.
-                        3. Technical Details: Lighting (natural/studio), camera gear (lens, aperture, sensors), and composition rules.
-                        4. Style & Aesthetics: Specific artistic or photographic style and quality parameters.
+                        1. Subject & Main Person: EXTREMELY DETAILED description. NEVER use vague words like "outfit", "clothes", "attractive", or "person". INSTEAD, describe the specific fabric (silk, latex, denim), the exact fit (skin-tight, oversized, draped), and the specific garments (yoga leggings, ruffly blouse, pencil skirt). Mention textures like "ribbed plastic", "smooth leather", or "grainy fabric".
+                        2. Environment & Setting: Precise location, depth, and atmosphere.
+                        3. Technical Details: Professional photographic gear (lens, aperture, sensors) and composition.
+                        4. Style & Aesthetics: High-end quality parameters.
+                        
+                        SPECIFICITY & NO AMBIGUITY:
+                        - MANDATORY: Every vague user instruction MUST be expanded into a concrete visual description. 
+                        - BAD (VAGUE): "She wears a tight outfit."
+                        - GOOD (SPECIFIC): "She is wearing high-waisted, charcoal-grey spandex leggings that contour her form, paired with a matching ribbed cotton sports bra that shows off her athletic build. The fabric has a slight matte sheen under the studio lights."
                         
                         AMATEUR / CANDID SPECIAL RULES:
                         - If "amateur" or "snapshot" or "candid" is detected in selections:
@@ -230,9 +235,10 @@ export const generateSmartPrompt = async (apiKey, selections) => {
                         Your goal is to translate their raw, often abstract or simple instructions into a HIGHLY DETAILED, PROFESSIONAL image generation prompt for the "Nano Banana Pro" model.
 
                         NANO BANANA PRO SPECS:
-                        - Requires structured, natural language.
-                        - Focuses on lighting, texture, and composition.
-                        - "Golden Circle": Subject -> Environment -> Tech Specs -> Mood.
+                        - REQUIRES MAXIMUM DETAIL. Do not use generic placeholders.
+                        - SPECIFICITY OVER INTERPRETATION: If a user says "outfit", you MUST choose a specific set of clothes (e.g., "strapless silk evening gown", "distressed denim shorts and a white tank top").
+                        - MATERIAL AUDIT: Describe the surfaces—shiny, matte, rough, sheer, opaque.
+                        - "Golden Circle": Subject (40% of prompt) -> Environment (30%) -> Tech/Mood (30%).
 
                         INPUT ANALYSIS:
                         - "instruction": The user's raw idea.
