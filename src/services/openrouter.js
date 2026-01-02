@@ -315,7 +315,7 @@ export const analyzeImageForCharacter = async (apiKey, imageUrl) => {
         const response = await axios.post(
             OPENROUTER_API_URL,
             {
-                model: 'meta-llama/llama-3.2-11b-vision-instruct:free',
+                model: 'meta-llama/llama-3.2-11b-vision-instruct',
                 messages: [
                     {
                         role: 'system',

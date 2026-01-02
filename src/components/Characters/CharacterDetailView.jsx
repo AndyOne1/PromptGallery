@@ -19,7 +19,7 @@ const ATTRIBUTE_LABELS = {
 };
 
 // Base realism instruction that will be prepended to all template prompts
-const REALISM_INSTRUCTION = 'Ultra-realistic photograph of a real human. NOT CGI, NOT 3D render, NOT animation, NOT illustration. Professional photography, high resolution, photorealistic.';
+const REALISM_INSTRUCTION = 'Ultra-realistic photograph of a real human. NOT CGI, NOT 3D render, NOT animation, NOT illustration. Professional photography, high resolution, photorealistic. The subject is wearing form-fitting athletic wear (short spandex shorts and sports bra or similar skintight outfit) that clearly shows the body shape and proportions.';
 
 const REFERENCE_TEMPLATES = [
     {
