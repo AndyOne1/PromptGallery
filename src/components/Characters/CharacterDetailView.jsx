@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import {
     X, User, Copy, Check, Trash2, ChevronDown, ChevronUp,
-    Sparkles, Image as ImageIcon, Send, Loader2, Plus, Pin, Camera
+    Sparkles, Image as ImageIcon, Send, Loader2, Plus, Pin, Camera, Edit3
 } from 'lucide-react';
 import { generateSmartPrompt } from '../../services/openrouter';
 import { promptsApi, charactersApi, galleryApi } from '../../services/api';
@@ -91,6 +91,10 @@ export default function CharacterDetailView({
     const [isLoadingGallery, setIsLoadingGallery] = useState(false);
     const [selectedDetailImage, setSelectedDetailImage] = useState(null);
     const [selectedTemplates, setSelectedTemplates] = useState([]);
+    const [useReferenceImage, setUseReferenceImage] = useState(false);
+    const [isEditingName, setIsEditingName] = useState(false);
+    const [editedName, setEditedName] = useState('');
+    const [isSavingName, setIsSavingName] = useState(false);
 
     const { updateImageInCache, removeImageFromCache } = useData();
 
@@ -201,22 +205,30 @@ export default function CharacterDetailView({
                 instruction.includes('full body') ||
                 instruction.includes('reference sheet');
 
-            const finalInstruction = hasTemplateContent
-                ? `${REALISM_INSTRUCTION}\n\n${instruction}`
-                : instruction;
+            let finalInstruction;
+
+            if (useReferenceImage) {
+                // Reference image mode: simplified description with note to use reference
+                finalInstruction = `${hasTemplateContent ? REALISM_INSTRUCTION + '\n\n' : ''}${instruction}\n\n[REFERENCE IMAGE MODE: The user will provide a reference image. Use the reference image as the primary subject. Only include basic identifying features (${character.attributes?.gender || 'person'}, ${character.attributes?.age || 'adult'}, ${character.attributes?.hairColor || ''} hair). Match the subject exactly to the reference image.]`;
+            } else {
+                // Normal mode: full character description
+                finalInstruction = hasTemplateContent
+                    ? `${REALISM_INSTRUCTION}\n\n${instruction}`
+                    : instruction;
+            }
 
             const result = await generateSmartPrompt(key, {
                 instruction: `Character: ${character.prompt}\n\nScene Request: ${finalInstruction}`,
                 vibes: [],
                 safetyLevel: 'sfw',
-                useReference: false,
-                referenceGender: ''
+                useReference: useReferenceImage,
+                referenceGender: character.attributes?.gender || ''
             });
 
             if (user) {
                 await promptsApi.save(
                     result.prompt,
-                    [...(result.refined_tags || []), 'Character Prompt', character.name],
+                    [...(result.refined_tags || []), 'Character Prompt', character.name, ...(useReferenceImage ? ['Reference Image'] : [])],
                     `${character.name}: ${result.title}`
                 );
                 loadRecentPrompts();
@@ -228,6 +240,23 @@ export default function CharacterDetailView({
             alert('Fehler: ' + err.message);
         } finally {
             setIsGenerating(false);
+        }
+    };
+
+    const handleSaveName = async () => {
+        if (!editedName.trim() || editedName === character.name) {
+            setIsEditingName(false);
+            return;
+        }
+        setIsSavingName(true);
+        try {
+            const updated = await charactersApi.update(character.id, { name: editedName.trim() });
+            onUpdate?.(updated);
+            setIsEditingName(false);
+        } catch (err) {
+            alert('Fehler beim Speichern: ' + err.message);
+        } finally {
+            setIsSavingName(false);
         }
     };
 
@@ -250,9 +279,41 @@ export default function CharacterDetailView({
                         <X size={18} />
                     </button>
 
-                    {/* Header - Just name, no tags */}
+                    {/* Header - Editable name */}
                     <div className="detail-header flex-col">
-                        <h2 className="title-gradient">{character.name}</h2>
+                        {isEditingName ? (
+                            <div className="flex-row gap-2 align-center mb-1">
+                                <input
+                                    type="text"
+                                    className="title-edit-input glass"
+                                    value={editedName}
+                                    onChange={(e) => setEditedName(e.target.value)}
+                                    autoFocus
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
+                                    disabled={isSavingName}
+                                />
+                                <button className="btn-primary small" onClick={handleSaveName} disabled={isSavingName}>
+                                    {isSavingName ? <Loader2 size={16} className="spin" /> : <Check size={16} />}
+                                </button>
+                                <button className="btn-secondary small" onClick={() => setIsEditingName(false)} disabled={isSavingName}>
+                                    <X size={16} />
+                                </button>
+                            </div>
+                        ) : (
+                            <h2
+                                className="title-gradient clickable"
+                                onClick={() => {
+                                    if (character.userId === user?.id) {
+                                        setEditedName(character.name);
+                                        setIsEditingName(true);
+                                    }
+                                }}
+                                title={character.userId === user?.id ? "Click to rename" : ""}
+                            >
+                                {character.name}
+                                {character.userId === user?.id && <Edit3 size={16} className="edit-icon ml-2" />}
+                            </h2>
+                        )}
                         <div className="creator-info-mini flex-row align-center gap-1 mt-1">
                             <User size={12} className="text-dim" />
                             <span className="text-dim text-xs">Created by: {character.userName || (character.userId === user?.id ? 'You' : 'Unknown')}</span>
@@ -383,6 +444,27 @@ export default function CharacterDetailView({
                                                     <span>Auswahl anwenden ({selectedTemplates.length})</span>
                                                 </button>
                                             )}
+                                        </div>
+
+                                        {/* Use Reference Image Toggle */}
+                                        <div className="reference-toggle-section">
+                                            <label
+                                                className={`reference-toggle glass ${useReferenceImage ? 'active' : ''}`}
+                                                onClick={() => setUseReferenceImage(!useReferenceImage)}
+                                            >
+                                                <div className="toggle-switch">
+                                                    <div className={`toggle-knob ${useReferenceImage ? 'on' : ''}`} />
+                                                </div>
+                                                <div className="toggle-content">
+                                                    <span className="toggle-title">Use Reference Image</span>
+                                                    <span className="toggle-desc">
+                                                        {useReferenceImage
+                                                            ? 'Prompt für Bild mit Referenz (vereinfachte Beschreibung)'
+                                                            : 'Aktivieren wenn du ein Referenzbild hochladen möchtest'}
+                                                    </span>
+                                                </div>
+                                                <ImageIcon size={20} className={useReferenceImage ? 'text-accent' : 'text-dim'} />
+                                            </label>
                                         </div>
 
                                         <textarea

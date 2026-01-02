@@ -685,3 +685,112 @@
 .mt-2 {
     margin-top: 0.5rem;
 }
+
+/* Reference Image Toggle */
+.reference-toggle-section {
+    margin-bottom: 0.75rem;
+}
+
+.reference-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.reference-toggle:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.reference-toggle.active {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: var(--accent-primary);
+}
+
+.toggle-switch {
+    width: 36px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    position: relative;
+    flex-shrink: 0;
+    transition: background 0.2s;
+}
+
+.reference-toggle.active .toggle-switch {
+    background: var(--accent-primary);
+}
+
+.toggle-knob {
+    width: 16px;
+    height: 16px;
+    background: white;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    transition: transform 0.2s;
+}
+
+.toggle-knob.on {
+    transform: translateX(16px);
+}
+
+.toggle-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.toggle-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+.toggle-desc {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+}
+
+/* Edit Icon in Title */
+.edit-icon {
+    opacity: 0.3;
+    transition: opacity 0.2s;
+    vertical-align: middle;
+}
+
+.title-gradient.clickable:hover .edit-icon {
+    opacity: 0.8;
+}
+
+.title-gradient.clickable {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+/* Name Edit Utilities */
+.mb-1 {
+    margin-bottom: 0.25rem;
+}
+
+.ml-2 {
+    margin-left: 0.5rem;
+}
+
+.gap-2 {
+    gap: 0.5rem;
+}
+
+.align-center {
+    align-items: center;
+}
+
+.text-accent {
+    color: var(--accent-primary);
+}
