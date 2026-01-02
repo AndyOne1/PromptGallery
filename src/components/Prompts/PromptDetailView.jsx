@@ -1,11 +1,14 @@
-import { X, Copy, Check, Trash2, Calendar, Hash, Clock, Image as ImageIcon, Loader2, Wand2 } from 'lucide-react';
+import { X, Copy, Check, Trash2, Calendar, Hash, Clock, Image as ImageIcon, Loader2, Wand2, Link as LinkIcon, Upload, User } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { normalizePromptText } from '../../utils/stringUtils';
 import { useData } from '../../context/DataContext';
+import { galleryApi } from '../../services/api';
 import ConfirmationModal from '../UI/ConfirmationModal';
 import ImageDetailView from '../Gallery/ImageDetailView';
+import ImagePickerModal from './ImagePickerModal';
+import UploadModal from '../Gallery/UploadModal';
 
 export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) {
     const [copied, setCopied] = useState(false);
@@ -14,7 +17,11 @@ export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) 
     const [showAllTags, setShowAllTags] = useState(false);
     const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
-    const { privateImages, user, updateImageInCache, removeImageFromCache } = useData();
+    const [isUploadOpen, setIsUploadOpen] = useState(false);
+    const [isPickerOpen, setIsPickerOpen] = useState(false);
+    const [isLinking, setIsLinking] = useState(false);
+
+    const { privateImages, user, updateImageInCache, removeImageFromCache, addImage } = useData();
 
     useEffect(() => {
         if (isOpen) {
@@ -56,6 +63,32 @@ export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) 
 
     const dateInfo = formatDate(prompt.createdAt);
     const promptTitle = prompt.title || (linkedImages.length > 0 ? linkedImages[0].title : 'Saved Prompt Record');
+    const creatorName = prompt.userName || (prompt.userId === user?.id ? 'You' : 'Unknown Creator');
+
+    const handleLinkImages = async (selectedImages) => {
+        setIsLinking(true);
+        try {
+            // To "link" them, we update their prompt text to match this record exactly
+            const updates = selectedImages.map(img =>
+                galleryApi.update(img.id, { prompt: fullText })
+            );
+            const updatedImages = await Promise.all(updates);
+            updatedImages.forEach(img => updateImageInCache(img));
+            alert(`Successfully linked ${selectedImages.length} images.`);
+        } catch (err) {
+            console.error('Failed to link images:', err);
+            alert('Failed to link some images');
+        } finally {
+            setIsLinking(false);
+        }
+    };
+
+    const handleUploadComplete = (newImageArray) => {
+        // newImageArray is already an array from my previous fix
+        const images = Array.isArray(newImageArray) ? newImageArray : [newImageArray];
+        addImage(images);
+        setIsUploadOpen(false);
+    };
 
     const modalContent = (
         <div className="modal-overlay" onClick={onClose}>
@@ -71,6 +104,10 @@ export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) 
                             <div className="meta-item">
                                 <Clock size={14} />
                                 <span>{dateInfo.time}</span>
+                            </div>
+                            <div className="meta-item creator-tag">
+                                <User size={14} />
+                                <span>Created by: {creatorName}</span>
                             </div>
                         </div>
                     </div>
@@ -104,7 +141,19 @@ export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) 
                     </section>
 
                     <section className="detail-segment">
-                        <label>Linked Gallery Creations ({linkedImages.length})</label>
+                        <div className="flex-row justify-between align-center mb-2">
+                            <label className="m-0">Linked Gallery Creations ({linkedImages.length})</label>
+                            <div className="flex-row gap-2">
+                                <button className="btn-secondary small" onClick={() => setIsPickerOpen(true)}>
+                                    <LinkIcon size={14} />
+                                    <span>Link Images</span>
+                                </button>
+                                <button className="btn-secondary small" onClick={() => setIsUploadOpen(true)}>
+                                    <Upload size={14} />
+                                    <span>Upload Image</span>
+                                </button>
+                            </div>
+                        </div>
                         {linkedImages.length > 0 ? (
                             <div className="linked-images-grid">
                                 {linkedImages.map(img => (
@@ -123,10 +172,12 @@ export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) 
                 </div>
 
                 <footer className="modal-footer footer-split">
-                    <button className="btn-secondary text-danger btn-left" onClick={() => setIsDeleteConfirmOpen(true)}>
-                        <Trash2 size={18} />
-                        <span>Delete Prompt</span>
-                    </button>
+                    <div className="flex-row gap-3">
+                        <button className="btn-secondary text-danger" onClick={() => setIsDeleteConfirmOpen(true)}>
+                            <Trash2 size={18} />
+                            <span>Delete</span>
+                        </button>
+                    </div>
                     <div className="flex-row gap-3">
                         <button className="btn-secondary" onClick={onClose}>Close</button>
                         <button className="btn-primary" onClick={() => {
@@ -157,6 +208,26 @@ export default function PromptDetailView({ prompt, isOpen, onClose, onDelete }) 
                     confirmText="Delete forever"
                 />
             </div>
+            {isPickerOpen && (
+                <ImagePickerModal
+                    isOpen={isPickerOpen}
+                    onClose={() => setIsPickerOpen(false)}
+                    images={privateImages}
+                    onSelect={handleLinkImages}
+                    alreadyLinkedIds={linkedImages.map(img => img.id)}
+                />
+            )}
+
+            {isUploadOpen && (
+                <UploadModal
+                    isOpen={isUploadOpen}
+                    onClose={() => setIsUploadOpen(false)}
+                    onUploadComplete={handleUploadComplete}
+                    initialPrompt={fullText}
+                    initialTags={tags}
+                />
+            )}
+
             {selectedImage && (
                 <ImageDetailView
                     isOpen={!!selectedImage}

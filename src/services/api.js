@@ -37,6 +37,10 @@ export const galleryApi = {
         const response = await axios.delete(`${API_BASE}/gallery?id=${idParam}`, { headers: getAuthHeaders() });
         return response.data;
     },
+    update: async (id, data) => {
+        const response = await axios.patch(`${API_BASE}/gallery`, { id, ...data }, { headers: getAuthHeaders() });
+        return response.data;
+    },
     togglePublic: async (id, isPublic) => {
         const response = await axios.patch(`${API_BASE}/gallery`, { id, isPublic }, { headers: getAuthHeaders() });
         return response.data;

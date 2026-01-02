@@ -1,4 +1,4 @@
-import { X, Copy, Check, Trash2, Wand2, Globe, Shield, Loader2 } from 'lucide-react';
+import { X, Copy, Check, Trash2, Wand2, Globe, Shield, Loader2, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
@@ -132,6 +132,10 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
                                             <Clock size={12} className="ml-2" />
                                             <span>{new Date(image.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                         </div>
+                                        <div className="creator-row mt-2">
+                                            <User size={12} className="text-dim" />
+                                            <span className="text-dim text-sm ml-1">Created by: {image.userName || (isOwner ? 'You' : 'Unknown')}</span>
+                                        </div>
                                     </div>
                                 )}
                             </div>
@@ -171,12 +175,18 @@ export default function ImageDetailView({ image, isOpen, onClose, onDeleteTag, u
                                 </div>
                             </section>
 
-                            {linkedPrompts.length > 0 && (
+                            {(linkedPrompts.length > 0 || image.characterId) && (
                                 <section className="detail-segment">
-                                    <label>Linked Saved Records</label>
-                                    <div className="linked-prompts-list">
+                                    <label>Linked Context</label>
+                                    <div className="linked-items-list flex-col gap-2">
+                                        {image.characterId && (
+                                            <div className="linked-item-card glass clickable" onClick={() => navigate('/characters', { state: { openId: image.characterId } })}>
+                                                <User size={16} className="text-accent" />
+                                                <span>Character: <strong>{image.characterName}</strong></span>
+                                            </div>
+                                        )}
                                         {linkedPrompts.map(p => (
-                                            <div key={p.id} className="linked-prompt-card glass">
+                                            <div key={p.id} className="linked-item-card glass">
                                                 <MessageSquare size={16} className="text-secondary" />
                                                 <span>Saved Prompt #{p.id}</span>
                                             </div>

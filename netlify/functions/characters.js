@@ -1,5 +1,5 @@
 import { getDb } from './db.js';
-import { characters, characterImages, galleryItems } from './schema.js';
+import { characters, characterImages, galleryItems, users } from './schema.js';
 import { eq, and, desc } from 'drizzle-orm';
 import { verifyToken, headers } from './utils.js';
 
@@ -18,8 +18,19 @@ export const handler = async (event) => {
     try {
         // GET /characters - List all characters
         if (event.httpMethod === 'GET' && segments.length === 0) {
-            const items = await db.select()
+            const items = await db.select({
+                id: characters.id,
+                userId: characters.userId,
+                name: characters.name,
+                attributes: characters.attributes,
+                prompt: characters.prompt,
+                pinnedImageId: characters.pinnedImageId,
+                createdAt: characters.createdAt,
+                updatedAt: characters.updatedAt,
+                userName: users.name
+            })
                 .from(characters)
+                .leftJoin(users, eq(characters.userId, users.id))
                 .where(eq(characters.userId, user.userId))
                 .orderBy(desc(characters.createdAt));
 
@@ -41,8 +52,19 @@ export const handler = async (event) => {
         // GET /characters/:id - Get single character with images
         if (event.httpMethod === 'GET' && segments.length === 1) {
             const characterId = parseInt(segments[0]);
-            const [character] = await db.select()
+            const [character] = await db.select({
+                id: characters.id,
+                userId: characters.userId,
+                name: characters.name,
+                attributes: characters.attributes,
+                prompt: characters.prompt,
+                pinnedImageId: characters.pinnedImageId,
+                createdAt: characters.createdAt,
+                updatedAt: characters.updatedAt,
+                userName: users.name
+            })
                 .from(characters)
+                .leftJoin(users, eq(characters.userId, users.id))
                 .where(and(
                     eq(characters.id, characterId),
                     eq(characters.userId, user.userId)

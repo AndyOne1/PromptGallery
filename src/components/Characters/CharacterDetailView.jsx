@@ -174,8 +174,12 @@ export default function CharacterDetailView({
                 </button>
 
                 {/* Header - Just name, no tags */}
-                <div className="detail-header">
+                <div className="detail-header flex-col">
                     <h2 className="title-gradient">{character.name}</h2>
+                    <div className="creator-info-mini flex-row align-center gap-1 mt-1">
+                        <User size={12} className="text-dim" />
+                        <span className="text-dim text-xs">Created by: {character.userName || (character.userId === user?.id ? 'You' : 'Unknown')}</span>
+                    </div>
                 </div>
 
                 {/* 3-Column Layout */}

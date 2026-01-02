@@ -1,5 +1,5 @@
 import { getDb } from './db.js';
-import { galleryItems } from './schema.js';
+import { galleryItems, users, characters, characterImages } from './schema.js';
 import { eq, and, or, inArray } from 'drizzle-orm';
 import { verifyToken, headers } from './utils.js';
 import axios from 'axios';
@@ -17,13 +17,32 @@ export const handler = async (event) => {
         if (event.httpMethod === 'GET') {
             const { visibility } = event.queryStringParameters || {};
 
+            let query = db.select({
+                id: galleryItems.id,
+                userId: galleryItems.userId,
+                url: galleryItems.url,
+                publicId: galleryItems.publicId,
+                prompt: galleryItems.prompt,
+                title: galleryItems.title,
+                description: galleryItems.description,
+                tags: galleryItems.tags,
+                isPublic: galleryItems.isPublic,
+                createdAt: galleryItems.createdAt,
+                userName: users.name,
+                characterId: characters.id,
+                characterName: characters.name
+            })
+                .from(galleryItems)
+                .leftJoin(users, eq(galleryItems.userId, users.id))
+                .leftJoin(characterImages, eq(galleryItems.id, characterImages.imageId))
+                .leftJoin(characters, eq(characterImages.characterId, characters.id));
+
             let items;
             if (visibility === 'public') {
-                items = await db.select().from(galleryItems).where(eq(galleryItems.isPublic, true));
+                items = await query.where(eq(galleryItems.isPublic, true));
             } else {
-                // Private items for the logged in user
                 if (!user) return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
-                items = await db.select().from(galleryItems).where(eq(galleryItems.userId, user.userId));
+                items = await query.where(eq(galleryItems.userId, user.userId));
             }
 
             return { statusCode: 200, headers, body: JSON.stringify(items) };
@@ -161,15 +180,17 @@ export const handler = async (event) => {
             return { statusCode: 200, headers, body: JSON.stringify({ success: true, count: itemsToDelete.length }) };
         }
 
-        // PATCH: Toggle public
+        // PATCH: Update item (visibility, title, description, prompt, tags)
         if (event.httpMethod === 'PATCH') {
             if (!user) return { statusCode: 401, headers, body: JSON.stringify({ error: 'Unauthorized' }) };
 
             const body = JSON.parse(event.body);
-            const { id, isPublic } = body;
+            const { id, ...updateData } = body;
+
+            if (!id) return { statusCode: 400, headers, body: JSON.stringify({ error: 'ID required' }) };
 
             const result = await db.update(galleryItems)
-                .set({ isPublic })
+                .set(updateData)
                 .where(
                     and(
                         eq(galleryItems.id, parseInt(id)),
@@ -181,7 +202,30 @@ export const handler = async (event) => {
                 return { statusCode: 404, headers, body: JSON.stringify({ error: 'Item not found or unauthorized' }) };
             }
 
-            return { statusCode: 200, headers, body: JSON.stringify(result[0]) };
+            // Return with userName and character info
+            const [withMeta] = await db.select({
+                id: galleryItems.id,
+                userId: galleryItems.userId,
+                url: galleryItems.url,
+                publicId: galleryItems.publicId,
+                prompt: galleryItems.prompt,
+                title: galleryItems.title,
+                description: galleryItems.description,
+                tags: galleryItems.tags,
+                isPublic: galleryItems.isPublic,
+                createdAt: galleryItems.createdAt,
+                userName: users.name,
+                characterId: characters.id,
+                characterName: characters.name
+            })
+                .from(galleryItems)
+                .leftJoin(users, eq(galleryItems.userId, users.id))
+                .leftJoin(characterImages, eq(galleryItems.id, characterImages.imageId))
+                .leftJoin(characters, eq(characterImages.characterId, characters.id))
+                .where(eq(galleryItems.id, result[0].id))
+                .limit(1);
+
+            return { statusCode: 200, headers, body: JSON.stringify(withMeta || result[0]) };
         }
 
         return { statusCode: 405, headers, body: JSON.stringify({ error: 'Method Not Allowed' }) };

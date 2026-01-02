@@ -1,5 +1,5 @@
 import { getDb } from './db.js';
-import { savedPrompts } from './schema.js';
+import { savedPrompts, users } from './schema.js';
 import { eq, and } from 'drizzle-orm';
 import { verifyToken, headers } from './utils.js';
 
@@ -16,7 +16,18 @@ export const handler = async (event) => {
     try {
         // GET: Fetch user's saved prompts
         if (event.httpMethod === 'GET') {
-            const items = await db.select().from(savedPrompts).where(eq(savedPrompts.userId, user.userId));
+            const items = await db.select({
+                id: savedPrompts.id,
+                userId: savedPrompts.userId,
+                title: savedPrompts.title,
+                content: savedPrompts.content,
+                refinedTags: savedPrompts.refinedTags,
+                createdAt: savedPrompts.createdAt,
+                userName: users.name
+            })
+                .from(savedPrompts)
+                .leftJoin(users, eq(savedPrompts.userId, users.id))
+                .where(eq(savedPrompts.userId, user.userId));
             return { statusCode: 200, headers, body: JSON.stringify(items) };
         }
 
