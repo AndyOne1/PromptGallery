@@ -71,6 +71,7 @@ export default function SmartGenerator({ onComplete, user, initialCharacter }) {
     const [instruction, setInstruction] = useState('');
     const [selectedVibeTags, setSelectedVibeTags] = useState([]);
     const [safetyLevel, setSafetyLevel] = useState('sfw');
+    const [ageLevel, setAgeLevel] = useState('young adult');
     const [useReference, setUseReference] = useState(false);
     const [referenceGender, setReferenceGender] = useState('');
     const [useCharacter, setUseCharacter] = useState(initialCharacter ? true : false);
@@ -207,6 +208,7 @@ export default function SmartGenerator({ onComplete, user, initialCharacter }) {
                 instruction: finalInstruction,
                 vibes: selectedVibeTags,
                 safetyLevel,
+                ageLevel,
                 useReference,
                 referenceGender
             });
@@ -369,30 +371,68 @@ export default function SmartGenerator({ onComplete, user, initialCharacter }) {
                             </div>
                         )}
                     </div>
+                </div>
 
-                    {/* Safety Selector (Modernized) */}
-                    <div className="safety-selector-modern glass">
-                        <button
-                            className={`safety-btn sfw ${safetyLevel === 'sfw' ? 'active' : ''}`}
-                            onClick={() => setSafetyLevel('sfw')}
-                            title="Safe For Work"
-                        >
-                            SFW
-                        </button>
-                        <button
-                            className={`safety-btn nsfw ${safetyLevel === 'nsfw' ? 'active' : ''}`}
-                            onClick={() => setSafetyLevel('nsfw')}
-                            title="Not Safe For Work"
-                        >
-                            NSFW
-                        </button>
-                        <button
-                            className={`safety-btn bypass ${safetyLevel === 'bypass' ? 'active' : ''}`}
-                            onClick={() => setSafetyLevel('bypass')}
-                            title="Artistic Bypass"
-                        >
-                            BP
-                        </button>
+                <div className="modern-safety-and-age-row">
+                    <div className="modern-safety-section">
+                        <label className="text-xs text-dim mb-2 block uppercase letter-spacing-wide">Safety Level</label>
+                        <div className="safety-selector-modern glass">
+                            <button
+                                className={`safety-btn sfw ${safetyLevel === 'sfw' ? 'active' : ''}`}
+                                onClick={() => setSafetyLevel('sfw')}
+                                title="Safe For Work"
+                            >
+                                SFW
+                            </button>
+                            <button
+                                className={`safety-btn nsfw ${safetyLevel === 'nsfw' ? 'active' : ''}`}
+                                onClick={() => setSafetyLevel('nsfw')}
+                                title="Not Safe For Work"
+                            >
+                                NSFW
+                            </button>
+                            <button
+                                className={`safety-btn bypass ${safetyLevel === 'bypass' || safetyLevel === 'nsfw_bypass' ? 'active' : ''}`}
+                                onClick={() => setSafetyLevel('nsfw_bypass')}
+                                title="Artistic Bypass"
+                            >
+                                BP
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="modern-age-section">
+                        <label className="text-xs text-dim mb-2 block uppercase letter-spacing-wide">Age</label>
+                        <div className="safety-selector-modern glass">
+                            <button
+                                className={`safety-btn bypass ${ageLevel === 'teen' ? 'active' : ''}`}
+                                onClick={() => setAgeLevel('teen')}
+                                title="Teen"
+                            >
+                                TEEN
+                            </button>
+                            <button
+                                className={`safety-btn sfw ${ageLevel === 'young adult' ? 'active' : ''}`}
+                                onClick={() => setAgeLevel('young adult')}
+                                title="Young Adult"
+                            >
+                                YOUNG
+                            </button>
+                            <button
+                                className={`safety-btn nsfw ${ageLevel === 'adult' ? 'active' : ''}`}
+                                onClick={() => setAgeLevel('adult')}
+                                title="Adult"
+                            >
+                                ADULT
+                            </button>
+                            <button
+                                className={`safety-btn sfw ${ageLevel === 'old' ? 'active' : ''}`}
+                                onClick={() => setAgeLevel('old')}
+                                title="Old"
+                            >
+                                OLD
+                            </button>
+                        </div>
                     </div>
                 </div>
 

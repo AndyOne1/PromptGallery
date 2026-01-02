@@ -1887,3 +1887,20 @@
     border-color: rgba(139, 92, 246, 0.4);
     color: var(--accent-primary);
 }
+
+.modern-safety-and-age-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.modern-safety-section, .modern-age-section {
+    flex: 1;
+    min-width: 200px;
+}
+
+/* Ensure the BP button is treated consistently */
+.safety-btn.active.bypass {
+    background: var(--accent-secondary);
+}
