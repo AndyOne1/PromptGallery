@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import { User, Sparkles, Send, RefreshCcw, Check, AlertTriangle, Save, Loader2 } from 'lucide-react';
-import { generateCharacterAttributes, refineCharacterAttributes, generateCharacterPrompt } from '../../services/openrouter';
+import { User, Sparkles, Send, RefreshCcw, Check, AlertTriangle, Save, Loader2, Upload, Image as ImageIcon } from 'lucide-react';
+import { generateCharacterAttributes, refineCharacterAttributes, generateCharacterPrompt, analyzeImageForCharacter } from '../../services/openrouter';
 import { charactersApi } from '../../services/api';
+import { uploadToCloudinary } from '../../services/cloudinary';
 
 const ATTRIBUTE_LABELS = {
     name: 'Name',
@@ -20,16 +21,20 @@ const ATTRIBUTE_LABELS = {
     distinguishingMarks: 'Besondere Merkmale',
 };
 
-export default function CharacterCreator({ onComplete, user }) {
-    const [phase, setPhase] = useState('input'); // 'input', 'refining', 'generating', 'saving'
+export default function CharacterCreator({ onComplete, user, initialMode = 'text' }) {
+    const [phase, setPhase] = useState(initialMode === 'image' ? 'upload' : 'input'); // 'input', 'upload', 'refining', 'generating', 'saving'
+    const [mode, setMode] = useState(initialMode); // 'text' or 'image'
     const [description, setDescription] = useState('');
     const [attributes, setAttributes] = useState(null);
     const [refinementText, setRefinementText] = useState('');
     const [finalPrompt, setFinalPrompt] = useState(null);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [uploadedImage, setUploadedImage] = useState(null);
+    const [imagePreview, setImagePreview] = useState(null);
     const textareaRef = useRef(null);
     const refinementRef = useRef(null);
+    const fileInputRef = useRef(null);
 
     useEffect(() => {
         if (textareaRef.current) {
@@ -57,6 +62,43 @@ export default function CharacterCreator({ onComplete, user }) {
             setDescription('');
         } catch (err) {
             setError('Fehler bei der Generierung: ' + err.message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleImageUpload = (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Show preview immediately
+        const reader = new FileReader();
+        reader.onload = (e) => setImagePreview(e.target.result);
+        reader.readAsDataURL(file);
+
+        setUploadedImage(file);
+    };
+
+    const handleAnalyzeImage = async () => {
+        const key = getApiKey();
+        if (!key) {
+            setError('Bitte hinterlege zuerst deinen OpenRouter API Key in den Einstellungen.');
+            return;
+        }
+        if (!uploadedImage) return;
+
+        setIsLoading(true);
+        setError(null);
+        try {
+            // Upload to Cloudinary first
+            const cloudinaryUrl = await uploadToCloudinary(uploadedImage);
+
+            // Analyze with vision model
+            const result = await analyzeImageForCharacter(key, cloudinaryUrl);
+            setAttributes(result);
+            setPhase('refining');
+        } catch (err) {
+            setError('Fehler bei der Bildanalyse: ' + err.message);
         } finally {
             setIsLoading(false);
         }
@@ -153,6 +195,63 @@ export default function CharacterCreator({ onComplete, user }) {
         </div>
     );
 
+    const renderUploadPhase = () => (
+        <div className="character-upload-phase">
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                style={{ display: 'none' }}
+            />
+
+            {!imagePreview ? (
+                <div
+                    className="upload-dropzone glass"
+                    onClick={() => fileInputRef.current?.click()}
+                >
+                    <Upload size={48} className="text-accent" />
+                    <p>Klicke hier oder ziehe ein Bild hierher</p>
+                    <span className="text-dim">JPG, PNG, WebP bis 10MB</span>
+                </div>
+            ) : (
+                <div className="upload-preview">
+                    <img src={imagePreview} alt="Preview" className="preview-image" />
+                    <div className="preview-actions">
+                        <button
+                            className="btn-secondary"
+                            onClick={() => {
+                                setImagePreview(null);
+                                setUploadedImage(null);
+                            }}
+                        >
+                            <RefreshCcw size={16} />
+                            <span>Anderes Bild</span>
+                        </button>
+                        <button
+                            className="btn-primary"
+                            onClick={handleAnalyzeImage}
+                            disabled={isLoading}
+                        >
+                            {isLoading ? <Loader2 className="spin" size={18} /> : <Sparkles size={18} />}
+                            <span>Charakter analysieren</span>
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <button
+                className="btn-link mt-4"
+                onClick={() => {
+                    setMode('text');
+                    setPhase('input');
+                }}
+            >
+                ← Oder beschreibe den Charakter manuell
+            </button>
+        </div>
+    );
+
     const renderAttributesTable = () => (
         <div className="character-attributes-table glass">
             <h3>Charakter-Attribute</h3>
@@ -233,12 +332,14 @@ export default function CharacterCreator({ onComplete, user }) {
                     <User className="text-accent" size={24} />
                     <h2>Character Creator</h2>
                 </div>
-                {phase !== 'input' && (
+                {(phase !== 'input' && phase !== 'upload') && (
                     <button className="btn-secondary small" onClick={() => {
-                        setPhase('input');
+                        setPhase(mode === 'image' ? 'upload' : 'input');
                         setAttributes(null);
                         setFinalPrompt(null);
                         setDescription('');
+                        setImagePreview(null);
+                        setUploadedImage(null);
                     }}>
                         <RefreshCcw size={14} />
                         <span>Neu starten</span>
@@ -254,6 +355,7 @@ export default function CharacterCreator({ onComplete, user }) {
             )}
 
             {phase === 'input' && renderInputPhase()}
+            {phase === 'upload' && renderUploadPhase()}
             {phase === 'refining' && renderRefiningPhase()}
             {(phase === 'generating' || phase === 'saving') && renderSavingPhase()}
 

@@ -309,6 +309,72 @@ Antworte NUR mit dem JSON-Objekt.`
     }
 };
 
+// Analyze image to extract character attributes using free vision model
+export const analyzeImageForCharacter = async (apiKey, imageUrl) => {
+    try {
+        const response = await axios.post(
+            OPENROUTER_API_URL,
+            {
+                model: 'meta-llama/llama-3.2-11b-vision-instruct:free',
+                messages: [
+                    {
+                        role: 'system',
+                        content: `Du bist ein Experte für visuelle Analyse. Deine Aufgabe ist es, AUSSCHLIESSLICH die Person/das Subjekt in einem Bild zu beschreiben.
+
+WICHTIG: Beschreibe NUR die Person selbst, KEINE Umgebung, KEIN Hintergrund, KEINE Szene!
+
+Gib ein JSON-Objekt mit folgenden Attributen zurück:
+- name: Vorschlag für einen passenden Namen
+- age: Geschätztes Alter (z.B. "Mitte 20")
+- gender: Geschlecht
+- hairColor: Haarfarbe mit Details
+- hairStyle: Frisur-Beschreibung
+- eyeColor: Augenfarbe (falls erkennbar)
+- skinTone: Hautton
+- bodyType: Körperbau (falls sichtbar)
+- height: Geschätzte Größe (falls einschätzbar)
+- facialFeatures: Gesichtsmerkmale (Augen, Nase, Lippen, Kinn etc.)
+- style: Kleidungsstil im Bild
+- personality: Wirkung/Ausstrahlung (2-3 Adjektive)
+- accessories: Sichtbare Accessoires
+- distinguishingMarks: Besondere Merkmale (Tattoos, Piercings, Narben etc.)
+
+Sei präzise und detailliert. Antworte NUR mit dem JSON-Objekt.`
+                    },
+                    {
+                        role: 'user',
+                        content: [
+                            {
+                                type: 'text',
+                                text: 'Analysiere diese Person und extrahiere die Charakter-Attribute. Fokussiere dich NUR auf die Person, nicht auf die Umgebung.'
+                            },
+                            {
+                                type: 'image_url',
+                                image_url: { url: imageUrl }
+                            }
+                        ]
+                    }
+                ],
+                response_format: { type: 'json_object' }
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'HTTP-Referer': 'http://localhost:5173',
+                    'X-Title': 'PromptFlow Vision',
+                    'Content-Type': 'application/json'
+                }
+            }
+        );
+
+        const content = response.data.choices[0].message.content;
+        return typeof content === 'string' ? JSON.parse(content) : content;
+    } catch (error) {
+        console.error('Image analysis error:', error);
+        throw error;
+    }
+};
+
 export const refineCharacterAttributes = async (apiKey, currentAttributes, refinementText) => {
     try {
         const response = await axios.post(

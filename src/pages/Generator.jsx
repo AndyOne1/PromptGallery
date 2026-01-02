@@ -13,14 +13,26 @@ export default function Generator({ user }) {
     const [initialSelections, setInitialSelections] = useState(location.state?.initialSelections || null);
 
     useEffect(() => {
-        // 1. Check location state
+        // 1. Handle character mode from navigation
+        if (location.state?.mode === 'character') {
+            setMode('character');
+            window.history.replaceState({}, document.title);
+            return;
+        }
+        if (location.state?.mode === 'character-from-image') {
+            setMode('character-from-image');
+            window.history.replaceState({}, document.title);
+            return;
+        }
+
+        // 2. Check location state for wizard
         if (location.state?.initialSelections) {
             setInitialSelections(location.state.initialSelections);
             setMode('wizard');
             window.history.replaceState({}, document.title);
             localStorage.removeItem('pending_template'); // Ensure backup is also cleared
         }
-        // 2. Fallback to localStorage (survives refreshes or state loss)
+        // 3. Fallback to localStorage (survives refreshes or state loss)
         else {
             const saved = localStorage.getItem('pending_template');
             if (saved) {
@@ -80,7 +92,11 @@ export default function Generator({ user }) {
         }
 
         if (mode === 'character') {
-            return <CharacterCreator onComplete={handleCharacterComplete} user={user} />;
+            return <CharacterCreator onComplete={handleCharacterComplete} user={user} initialMode="text" />;
+        }
+
+        if (mode === 'character-from-image') {
+            return <CharacterCreator onComplete={handleCharacterComplete} user={user} initialMode="image" />;
         }
 
         return (

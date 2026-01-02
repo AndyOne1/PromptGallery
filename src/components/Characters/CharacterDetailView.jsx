@@ -18,6 +18,39 @@ const ATTRIBUTE_LABELS = {
     accessories: 'Accessoires', distinguishingMarks: 'Besondere Merkmale'
 };
 
+const REFERENCE_TEMPLATES = [
+    {
+        id: 'portrait-front',
+        label: 'Portrait (Front)',
+        icon: '👤',
+        prompt: 'Close-up portrait photograph, front view, facing camera directly. Studio lighting, neutral background. Ultra-realistic photograph, NOT CGI, NOT 3D render, NOT animation, NOT illustration. Professional photography, high resolution, photorealistic.'
+    },
+    {
+        id: 'portrait-side',
+        label: 'Portrait (Seite)',
+        icon: '👤',
+        prompt: 'Close-up portrait photograph, side profile view. Studio lighting, neutral background. Ultra-realistic photograph, NOT CGI, NOT 3D render, NOT animation, NOT illustration. Professional photography, high resolution, photorealistic.'
+    },
+    {
+        id: 'fullbody-front',
+        label: 'Ganzkörper (Front)',
+        icon: '🧍',
+        prompt: 'Full body photograph, front view, standing pose. Studio lighting, neutral background. Ultra-realistic photograph, NOT CGI, NOT 3D render, NOT animation, NOT illustration. Professional photography, high resolution, photorealistic, full length shot.'
+    },
+    {
+        id: 'fullbody-side',
+        label: 'Ganzkörper (Seite)',
+        icon: '🧍',
+        prompt: 'Full body photograph, side view, standing pose. Studio lighting, neutral background. Ultra-realistic photograph, NOT CGI, NOT 3D render, NOT animation, NOT illustration. Professional photography, high resolution, photorealistic, full length shot.'
+    },
+    {
+        id: 'character-sheet',
+        label: 'Character Sheet',
+        icon: '📋',
+        prompt: 'Professional character reference sheet with multiple views: front view, side profile, and back view. Clean white background, consistent lighting across all views. Ultra-realistic photograph, NOT CGI, NOT 3D render, NOT animation, NOT illustration. Professional photography, high resolution, photorealistic reference sheet for production use.'
+    }
+];
+
 function CollapsibleSection({ title, defaultOpen = true, children, icon }) {
     const [isOpen, setIsOpen] = useState(defaultOpen);
 
@@ -287,6 +320,25 @@ export default function CharacterDetailView({
                                         <p className="tab-intro">
                                             Erstelle Szenen und Prompts mit diesem Charakter.
                                         </p>
+
+                                        {/* Reference Image Templates */}
+                                        <div className="template-section">
+                                            <label className="template-label">Schnell-Templates für Referenzbilder</label>
+                                            <div className="template-grid">
+                                                {REFERENCE_TEMPLATES.map(template => (
+                                                    <button
+                                                        key={template.id}
+                                                        className="template-btn glass"
+                                                        onClick={() => setInstruction(template.prompt)}
+                                                        disabled={isGenerating}
+                                                    >
+                                                        <span className="template-icon">{template.icon}</span>
+                                                        <span className="template-name">{template.label}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
                                         <textarea
                                             className="scene-input"
                                             placeholder="z.B. 'Ein Portrait im Film Noir Stil' oder 'Character Sheet mit verschiedenen Posen'"

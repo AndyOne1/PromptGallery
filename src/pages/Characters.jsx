@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Plus, Search, Copy, Check, Loader2 } from 'lucide-react';
+import { User, Plus, Search, Copy, Check, Loader2, Image as ImageIcon } from 'lucide-react';
 import { charactersApi } from '../services/api';
 import CharacterDetailView from '../components/Characters/CharacterDetailView';
 import ConfirmationModal from '../components/UI/ConfirmationModal';
@@ -76,6 +76,10 @@ export default function Characters({ user }) {
         navigate('/generator', { state: { mode: 'character' } });
     };
 
+    const handleNewCharacterFromImage = () => {
+        navigate('/generator', { state: { mode: 'character-from-image' } });
+    };
+
     return (
         <>
             <div className="page-container animate-fade-in">
@@ -85,6 +89,10 @@ export default function Characters({ user }) {
                         <p className="subtitle">Your AI-generated character library</p>
                     </div>
                     <div className="header-actions">
+                        <button className="btn-secondary" onClick={handleNewCharacterFromImage}>
+                            <ImageIcon size={18} />
+                            <span>From Image</span>
+                        </button>
                         <button className="btn-primary" onClick={handleNewCharacter}>
                             <Plus size={18} />
                             <span>New Character</span>
