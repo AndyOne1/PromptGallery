@@ -1,16 +1,75 @@
 import { useState, useRef, useEffect } from 'react';
-import { Wand2, Sparkles, Send, Shield, RefreshCcw, Check, AlertTriangle, User, Plus, X, ImageIcon, ChevronDown } from 'lucide-react';
+import { Wand2, Sparkles, Send, Shield, RefreshCcw, Check, AlertTriangle, User, Plus, X, ImageIcon, ChevronDown, Camera, Share2, History, ZapOff } from 'lucide-react';
 import { generateSmartPrompt } from '../../services/openrouter';
 import { charactersApi } from '../../services/api';
 
-const VIBES = [
-    'Cinematic', 'Candid', 'Cyberpunk', 'Ethereal', 'Dark Fantasy',
-    'Studio Portrait', 'Vintage', 'Anime', 'Minimalist', 'Surreal'
-];
+const VIBE_CATEGORIES = {
+    'Amateur': {
+        icon: Camera,
+        subcategories: {
+            'Selfie-Typen': [
+                { name: 'Handy-Selfie', tags: 'Frontkamera, Arm ausgestreckt, zufälliger Blick, Screen-Flash, shot on phone' },
+                { name: 'Spiegel-Selfie', tags: 'Badezimmerspiegel, schlechte Beleuchtung, Handykamera sichtbar, mirror selfie' },
+                { name: 'Spiegel-Check', tags: 'Kurzer Blick in den Spiegel, unvorbereitet, natürlicher Ausdruck, quick look' },
+                { name: 'Badezimmer-Spiegel', tags: 'Overhead-Beleuchtung, Fliesen im Hintergrund, schlechte Kameraqualität, bathroom mirror' },
+                { name: 'Autospiegel-Selfie', tags: 'Fahrzeugspiegel, Tageslicht durch Fenster, Roadtrip-Atmosphäre, car mirror' },
+                { name: 'Aufzug-Selfie', tags: 'Metallwände, Deckenlicht, beengter Raum, zufälliger Mitfahrer' },
+                { name: 'Toilettenspiegel-Selfie', tags: 'Typische Teenager-Situation, schlechte Handykamera, Blitz, restroom mirror' },
+                { name: 'Schrankspiegel-Selfie', tags: 'Dunkler Flur, mäßige Beleuchtung, Kleiderbügel sichtbar, closet mirror' }
+            ],
+            'Alltag': [
+                { name: 'Candid Alltag', tags: 'Ungestellt, während einer Aktivität, keine Pose angenommen, real life' },
+                { name: 'Langweiliges Leben', tags: 'Auf dem Sofa liegend, Pyjama, Netflix im Hintergrund, boring reality' },
+                { name: 'Prokrastination', tags: 'Handy scrollend, Laptop offen, untätig, lazy day' },
+                { name: 'Kochen', tags: 'In der Küche, Schürze, Topf in der Hand, dampfend, cooking' },
+                { name: 'Frühstück', tags: 'Am Tisch, Kaffee, verschlavener Look, breakfast' },
+                { name: 'Arbeiten', tags: 'Am Laptop, Kaffeetasse, unordentlicher Schreibtisch, workspace' },
+                { name: 'Putzen', tags: 'Staub wischend, Reinigungsmittel, Hausschuhe, cleaning' },
+                { name: 'Haustier-Interaktion', tags: 'Mit Hund oder Katze, keine Kamera beachtend, pet play' }
+            ]
+        }
+    },
+    'Social': {
+        icon: Share2,
+        subcategories: {
+            'Style': [
+                { name: 'Instagram-Ästhetik', tags: 'Gute Selfie-Qualität, Filterspuren, trendige Pose, insta style' },
+                { name: 'TikTok-Capture', tags: 'Vertikales Video-Frame, Schnappschuss, unvorbereitet, tiktok clip' },
+                { name: 'Snapchat-Style', tags: 'Frontkamera, diverses Licht, schnelle Aufnahme, snap chat' },
+                { name: 'BeReal-Moment', tags: 'Natürlich, echt, keine Inszenierung, Timer-Optik, be real' },
+                { name: 'VSCO-Ästhetik', tags: 'Filmkamera-Look, analoger Farben, Understated, vsco filter' }
+            ]
+        }
+    },
+    'Retro': {
+        icon: History,
+        subcategories: {
+            'Ästhetik': [
+                { name: '2000er-Jahre', tags: 'Frontkamera-Engelsflügelchen, helle Farben, unscharf, Y2K aesthetic' },
+                { name: '2010er-Early', tags: 'Frühe Handykamera-Qualität, Instagram-Startphase, 2010s style' },
+                { name: 'Dispo-Kamera', tags: 'Abgelaufen, Farbverschiebung, Kratzer, Korn, disposable camera' },
+                { name: 'Einwegkamera-Strand', tags: 'Sommer 2005, Rotstich, verblasst, beach disposable' },
+                { name: 'Wegwerfkamera-Party', tags: 'Dunkel, Blitz, verschwommen, authentisch, party snapshot' }
+            ]
+        }
+    },
+    'Lo-Fi': {
+        icon: ZapOff,
+        subcategories: {
+            'Unbeabsichtigt': [
+                { name: 'Versehentlicher Schnappschuss', tags: 'Kamera in der Tasche ausgelöst, accidental shot' },
+                { name: 'Pocket-Dial-Foto', tags: 'Handy in der Tasche, zufällige Aufnahme, pocket photo' },
+                { name: 'Screenshots aus Videos', tags: 'Video-Frame, unscharf, komprimiert, video grab' },
+                { name: 'Gelöschte Version', tags: 'Komprimiert, Artefakte, schlechte Qualität, low res' },
+                { name: 'Niedrige Auflösung', tags: 'Web-Optimierung, Pixelierung, Kompression, poor quality' }
+            ]
+        }
+    }
+};
 
 export default function SmartGenerator({ onComplete, user, initialCharacter }) {
     const [instruction, setInstruction] = useState('');
-    const [selectedVibes, setSelectedVibes] = useState([]);
+    const [selectedVibeTags, setSelectedVibeTags] = useState([]);
     const [safetyLevel, setSafetyLevel] = useState('sfw');
     const [useReference, setUseReference] = useState(false);
     const [referenceGender, setReferenceGender] = useState('');
@@ -22,10 +81,12 @@ export default function SmartGenerator({ onComplete, user, initialCharacter }) {
     // UI Popover States
     const [showCharPopover, setShowCharPopover] = useState(false);
     const [showRefPopover, setShowRefPopover] = useState(false);
+    const [activeVibePopover, setActiveVibePopover] = useState(null); // 'Amateur', 'Social', etc.
 
     const textareaRef = useRef(null);
     const charPopoverRef = useRef(null);
     const refPopoverRef = useRef(null);
+    const vibePopoverRefs = useRef({});
 
     useEffect(() => {
         loadCharacters();
@@ -40,11 +101,14 @@ export default function SmartGenerator({ onComplete, user, initialCharacter }) {
             if (refPopoverRef.current && !refPopoverRef.current.contains(event.target)) {
                 setShowRefPopover(false);
             }
+            if (activeVibePopover && vibePopoverRefs.current[activeVibePopover] && !vibePopoverRefs.current[activeVibePopover].contains(event.target)) {
+                setActiveVibePopover(null);
+            }
         };
 
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    }, [activeVibePopover]);
 
     const loadCharacters = async () => {
         if (!user) {
@@ -68,9 +132,10 @@ export default function SmartGenerator({ onComplete, user, initialCharacter }) {
         }
     }, [instruction]);
 
-    const handleVibeToggle = (vibe) => {
-        setSelectedVibes(prev =>
-            prev.includes(vibe) ? prev.filter(v => v !== vibe) : [...prev, vibe]
+    const handleVibeTagToggle = (vibeItem) => {
+        const tagString = vibeItem.tags;
+        setSelectedVibeTags(prev =>
+            prev.includes(tagString) ? prev.filter(t => t !== tagString) : [...prev, tagString]
         );
     };
 
@@ -84,8 +149,15 @@ export default function SmartGenerator({ onComplete, user, initialCharacter }) {
         ];
         const randomInfo = surprises[Math.floor(Math.random() * surprises.length)];
         setInstruction(randomInfo);
-        const randomVibe = VIBES[Math.floor(Math.random() * VIBES.length)];
-        setSelectedVibes([randomVibe]);
+
+        // Randomly pick a vibe from a random category
+        const categories = Object.keys(VIBE_CATEGORIES);
+        const randCat = categories[Math.floor(Math.random() * categories.length)];
+        const subCats = Object.keys(VIBE_CATEGORIES[randCat].subcategories);
+        const randSub = subCats[Math.floor(Math.random() * subCats.length)];
+        const items = VIBE_CATEGORIES[randCat].subcategories[randSub];
+        const randItem = items[Math.floor(Math.random() * items.length)];
+        setSelectedVibeTags([randItem.tags]);
     };
 
     const handleCharacterToggle = (character) => {
@@ -133,7 +205,7 @@ export default function SmartGenerator({ onComplete, user, initialCharacter }) {
 
             const result = await generateSmartPrompt(key, {
                 instruction: finalInstruction,
-                vibes: selectedVibes,
+                vibes: selectedVibeTags,
                 safetyLevel,
                 useReference,
                 referenceGender
@@ -325,17 +397,74 @@ export default function SmartGenerator({ onComplete, user, initialCharacter }) {
                 </div>
 
                 <div className="modern-vibes-section">
-                    <label className="text-xs text-dim mb-2 block uppercase letter-spacing-wide">Style Vibes</label>
-                    <div className="vibe-chips-modern">
-                        {VIBES.map(vibe => (
-                            <button
-                                key={vibe}
-                                className={`modern-vibe-chip ${selectedVibes.includes(vibe) ? 'active' : ''}`}
-                                onClick={() => handleVibeToggle(vibe)}
-                            >
-                                {vibe}
-                            </button>
-                        ))}
+                    <label className="text-xs text-dim mb-3 block uppercase letter-spacing-wide">Style Vibes & Categories</label>
+                    <div className="modern-toggles-row">
+                        {Object.entries(VIBE_CATEGORIES).map(([catName, data]) => {
+                            const Icon = data.icon;
+                            // Check if any vibe in this category is selected
+                            const hasSelection = Object.values(data.subcategories).flat().some(item =>
+                                selectedVibeTags.includes(item.tags)
+                            );
+                            const selectedCount = Object.values(data.subcategories).flat().filter(item =>
+                                selectedVibeTags.includes(item.tags)
+                            ).length;
+
+                            return (
+                                <div
+                                    key={catName}
+                                    className="modern-popover-group"
+                                    ref={el => vibePopoverRefs.current[catName] = el}
+                                >
+                                    <button
+                                        className={`modern-toggle-btn ${hasSelection ? 'active' : ''}`}
+                                        onClick={() => {
+                                            if (activeVibePopover === catName) {
+                                                setActiveVibePopover(null);
+                                            } else {
+                                                setActiveVibePopover(catName);
+                                            }
+                                        }}
+                                    >
+                                        <Icon size={18} />
+                                        <span>{catName}</span>
+                                        {selectedCount > 0 && (
+                                            <span className="badge-count-mini">{selectedCount}</span>
+                                        )}
+                                    </button>
+
+                                    {activeVibePopover === catName && (
+                                        <div className="modern-popover vibe-categories-popover glass animate-scale-in">
+                                            <div className="popover-header">
+                                                <span>{catName} Styles</span>
+                                                <X size={14} className="clickable" onClick={() => setActiveVibePopover(null)} />
+                                            </div>
+                                            <div className="popover-body vibe-selection-scroll">
+                                                {Object.entries(data.subcategories).map(([subCatName, items]) => (
+                                                    <div key={subCatName} className="vibe-subgroup">
+                                                        <label className="subgroup-label">{subCatName}</label>
+                                                        <div className="vibe-grid-mini">
+                                                            {items.map(vibeItem => {
+                                                                const isSelected = selectedVibeTags.includes(vibeItem.tags);
+                                                                return (
+                                                                    <button
+                                                                        key={vibeItem.name}
+                                                                        className={`vibe-pill-mini ${isSelected ? 'active' : ''}`}
+                                                                        onClick={() => handleVibeTagToggle(vibeItem)}
+                                                                    >
+                                                                        {isSelected && <Check size={10} />}
+                                                                        <span>{vibeItem.name}</span>
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </div>
